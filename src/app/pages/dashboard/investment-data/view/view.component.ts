@@ -12,12 +12,11 @@ import { PermissionService } from '@shared/services/permission.service';
 import { InvestmentDataService } from '@core/services/dashboard/investment-data.service';
 import { CommonModule } from '@angular/common';
 import { RecordNavigatorComponent } from "@shared/components/record-navigator/record-navigator.component";
-import { ActivityLoaderComponent } from "@shared/components/activity-loader/activity-loader.component";
 
 @Component({
   selector: 'app-investment-view',
   standalone: true,
-  imports: [TextButtonComponent, BackBtnComponent, SpinnerComponent, CommonModule, RecordNavigatorComponent, ActivityLoaderComponent],
+  imports: [TextButtonComponent, BackBtnComponent, SpinnerComponent, CommonModule, RecordNavigatorComponent],
   templateUrl: 'view.component.html',
   styleUrl: 'view.component.scss'
 })
@@ -53,8 +52,12 @@ export class ViewComponent implements OnInit, OnDestroy {
     if (storedData) {
       this.investmentData = storedData;
     }
-    this.fetchInvestmentData(+id!);
-    this.fetchAmenities(this.investmentData?.id ?? +id!);
+
+
+    this.route.paramMap.subscribe(params => {
+      this.fetchInvestmentData(+params.get('id')!);
+      this.fetchAmenities(this.investmentData?.id ?? +params.get('id')!);
+    })
   }
 
 
@@ -133,16 +136,12 @@ export class ViewComponent implements OnInit, OnDestroy {
   onPrev(previousRecordId: number): void {
     if (previousRecordId) {
       this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}/${previousRecordId}`);
-      this.fetchInvestmentData(+previousRecordId!);
-      this.fetchAmenities(this.investmentData?.id ?? +previousRecordId!)
     }
   }
 
   onNext(nextRecordId: number): void {
     if (nextRecordId) {
       this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}/${nextRecordId}`);
-      this.fetchInvestmentData(+nextRecordId!);
-      this.fetchAmenities(this.investmentData?.id ?? +nextRecordId!)
     }
   }
 
@@ -182,14 +181,17 @@ export class ViewComponent implements OnInit, OnDestroy {
           if (!this.investmentData) {
             this.router.navigateByUrl('/not-found', { skipLocationChange: true });
           }
+          console.log("I am here");
+          this.loaderService.stop();
         },
         error: (err) => {
           if (err.status === 404) {
             this.angularRouter.navigateByUrl('/not-found', { skipLocationChange: true });
           }
+          this.loaderService.stop();
         },
         complete: () => {
-          this.loaderService.stop();
+
         }
       });
   }

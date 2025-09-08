@@ -32,7 +32,7 @@ export class AppComponent {
 
   ngOnInit(): void {
     this.initColorScheme();
-    this.onRouteChangeLoader();
+    // this.onRouteChangeLoader();
   }
 
   @HostListener('window:focus', ['$event'])
@@ -44,16 +44,16 @@ export class AppComponent {
     this.colorSchemeSubscription.unsubscribe();
   }
 
-  private onRouteChangeLoader() {
-    this.router.events.subscribe((event) => {
-      if (event instanceof NavigationStart) {
-        this.loader.start();
-      }
-      if (event instanceof NavigationEnd) {
-        this.loader.stop();
-      }
-    });
-  }
+  // private onRouteChangeLoader() {
+  //   this.router.events.subscribe((event) => {
+  //     if (event instanceof NavigationStart) {
+  //       this.loader.start();
+  //     }
+  //     if (event instanceof NavigationEnd) {
+  //       this.loader.stop();
+  //     }
+  //   });
+  // }
 
   private initColorScheme() {
     this.colorSchemeSubscription = this.colorScheme.init().subscribe();

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { LoaderService } from '@shared/services/loader.service';
 import { LoaderComponent as LoaderC } from '../../loader/loader.component';
-import { Subscription } from 'rxjs';
+import { distinctUntilChanged, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-loader-provider',
@@ -23,7 +23,11 @@ export class LoaderComponent {
   constructor(private loader: LoaderService) {}
 
   ngOnInit(): void {
-    this.loaderEventSubscriber = this.loader.loaderEvent.subscribe((value) => {
+    this.loaderEventSubscriber = this.loader.loaderEvent.pipe(
+    distinctUntilChanged(
+      (prev, curr) => prev.isOpen === curr.isOpen && prev.text === curr.text
+    )
+  ).subscribe((value) => {
       this.isOpen = value.isOpen;
       this.text = value.text;
     });
