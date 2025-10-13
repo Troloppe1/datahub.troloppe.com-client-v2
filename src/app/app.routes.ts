@@ -190,7 +190,7 @@ export const routes: Routes = [
       {
         path: 'investment-data/:sector/:id/edit',
         component: InvestmentDataEditComponent,
-        title: 'Create Investment Data',
+        title: 'Edit Investment Data',
       },
 
       // Notification Route

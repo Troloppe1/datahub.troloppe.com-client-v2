@@ -2,8 +2,8 @@
 <ng-template #form>
   <div class="w-full p-2 md:p-4 lg:w-3/4 mx-auto">
     <!-- Sector Selector -->
+    @if(action === 'create'){
     <div class="mb-6 p-4 bg-base-200 rounded-lg shadow-sm">
-
 
       <div class="flex items-center gap-4">
 
@@ -20,7 +20,7 @@
         </span>
       </div>
     </div>
-
+    }
     <form class="rounded-lg bg-base-300 p-4 md:p-8 text-sm shadow-md backdrop-blur-md my-6"
       [formGroup]="investmentDataFormGroup" (ngSubmit)="handleSubmit()">
 

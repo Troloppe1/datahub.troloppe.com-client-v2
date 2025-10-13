@@ -58,7 +58,6 @@ export class ListingsAgentsService {
 
   apiUpdateListingAgentById(id: number, data: any) {
     const url = apiUrlFactory(`/external-listings/agents/${id}`)
-    console.log(data)
     return this.httpClient.put<{ success: boolean, message: string, data: any }>(url, data)
   }
 

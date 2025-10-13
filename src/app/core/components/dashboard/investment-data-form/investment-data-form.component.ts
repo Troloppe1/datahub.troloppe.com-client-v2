@@ -113,12 +113,10 @@ export class InvestmentDataFormComponent {
   private initializeSectorFromRoute(): void {
     // Get sector from current route snapshot immediately
     const sectorFromUrl = this.route.snapshot.params['sector'];
-    console.log('Initializing sector from URL:', sectorFromUrl);
 
     if (sectorFromUrl && this.investmentSectors.some(s => s.key === sectorFromUrl)) {
       this.selectedSector = sectorFromUrl;
       this.currentSectorData = this.investmentSectors.find(s => s.key === sectorFromUrl);
-      console.log('Initialized with sector:', this.selectedSector);
     } else {
 
     }
@@ -338,14 +336,12 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
 
   private updateSectorFromRoute(params: Params): void {
     const sectorFromUrl = params['sector'];
-    console.log('Route params changed, sector:', sectorFromUrl);
 
     if (sectorFromUrl && this.investmentSectors.some(s => s.key === sectorFromUrl)) {
       // Only update if sector actually changed
       if (this.selectedSector !== sectorFromUrl) {
         this.selectedSector = sectorFromUrl;
         this.currentSectorData = this.investmentSectors.find(s => s.key === sectorFromUrl);
-        console.log('Updated sector to:', this.selectedSector);
 
         // Update the form if needed based on sector
         this.updateFormBasedOnSector();
@@ -358,7 +354,6 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
     // Add logic here to show/hide fields or set default values
     if (this.investmentDataFormGroup && this.currentSectorData) {
       // Example: Set sector-specific defaults or configurations
-      console.log('Updating form for sector:', this.currentSectorData.label);
     }
   }
 
@@ -373,7 +368,6 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
   // Handle sector change
   onInvestmentSectorChange(sectorKey: string) {
     const selectedSectorData = this.investmentSectors.find(s => s.key === sectorKey);
-    console.log('Sector change requested:', sectorKey, 'Found:', selectedSectorData);
     if (selectedSectorData) {
       // Update the selectedSector immediately for UI feedback
       this.selectedSector = sectorKey;
@@ -385,6 +379,7 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
   }
 
   private getInitialData(resource?: { name: string, data: IdAndNameType }) {
+    console.log("hello")
     const initialDataMap: Record<string, () => Observable<any>> = {
       state: () => this.initialDataService.getAllStates(),
       sector: () => this.initialDataService.getAllSectors(),
@@ -407,6 +402,7 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
   }
 
   private setupOptionsInEditMode() {
+    console.log("Setting up options for edit mode...", this.data);
     const mapper: Record<string, Observable<IdAndNameType[]>> = {
       region: this.formDataService.getRegionsByStateId(this.data.state_id),
       location: this.formDataService.getLocationsByRegionId(this.data.region_id),

@@ -2,7 +2,7 @@ import { AsyncPipe } from '@angular/common';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InvestmentDataFormComponent } from '@core/components/dashboard/investment-data-form/investment-data-form.component';
-import { DummyInvestmentDataService } from '@core/services/dashboard/dummy-investment-data.service';
+import { InvestmentDataService } from '@core/services/dashboard/investment-data.service';
 import { routeFadeInOut, visibleTrigger } from '@shared/animations';
 import { map, Observable, catchError, of, Subject, takeUntil } from 'rxjs';
 
@@ -28,16 +28,16 @@ export class EditComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private readonly dummyInvestmentDataService: DummyInvestmentDataService,
+    private readonly investmentDataService: InvestmentDataService,
     private readonly route: ActivatedRoute,
     private readonly router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = params['id'];
       this.sector = params['sector'] || 'residential';
-      
+
       if (id) {
         this.loadInvestmentData(+id);
       }
@@ -45,8 +45,8 @@ export class EditComponent implements OnInit, OnDestroy {
   }
 
   private loadInvestmentData(id: number): void {
-    this.investmentData$ = this.dummyInvestmentDataService
-      .apiGetInvestmentDataById(id, this.sector, false)
+    this.investmentData$ = this.investmentDataService
+      .apiGetInvestmentDataById(id, true, this.sector)
       .pipe(
         map((response) => response.data),
         catchError((error) => {

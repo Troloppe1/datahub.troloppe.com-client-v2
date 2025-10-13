@@ -20,7 +20,6 @@ export class CreateAndDownloadInvestmentDataBtnsComponent {
   @Output() sectorClicked = new EventEmitter<string>();
 
   /* handleClick() {
-    console.log('Sector clicked:', this.sectorKey);
     this.sectorClicked.emit(this.sectorKey);
   } */
 
