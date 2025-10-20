@@ -379,9 +379,8 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
   }
 
   private getInitialData(resource?: { name: string, data: IdAndNameType }) {
-    console.log("hello")
     const initialDataMap: Record<string, () => Observable<any>> = {
-      state: () => this.initialDataService.getAllStates(),
+      // state: () => this.initialDataService.getAllStates(),
       sector: () => this.initialDataService.getAllSectors(),
       offer: () => this.initialDataService.getAllOffers(),
     };
@@ -402,14 +401,14 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
   }
 
   private setupOptionsInEditMode() {
-    console.log("Setting up options for edit mode...", this.data);
+    console.log('Setting up options in edit mode with data:', this.data);
     const mapper: Record<string, Observable<IdAndNameType[]>> = {
-      region: this.formDataService.getRegionsByStateId(this.data.state_id),
-      location: this.formDataService.getLocationsByRegionId(this.data.region_id),
-      section: this.formDataService.getSectionsByLocalityId(this.data.locality_id),
-      lga: this.formDataService.getLgasByRegionId(this.data.region_id),
-      lcda: this.formDataService.getLcdasByLgaId(this.data.lga_id),
-      subSector: this.formDataService.getSubSectorsBySectorId(this.data.sector_id),
+      region: this.formDataService.getRegions(),
+      location: this.formDataService.getLocationsByRegionId(this.data.property.region_id),
+      section: this.formDataService.getSectionsByLocalityId(this.data.property.locality_id),
+      lga: this.formDataService.getLgasByRegionId(this.data.property.region_id),
+      lcda: this.formDataService.getLcdasByLgaId(this.data.property.lga_id),
+      subSector: this.formDataService.getSubSectorsBySectorId(this.data.property.sector_id),
     }
 
     forkJoin(mapper).pipe(takeUntil(this.destroy$)).subscribe((result) => {
@@ -432,11 +431,11 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
     this.investmentDataService.dropdownSelectedData[fieldName] = selectedItem
   }
 
-  onStateChange(selectedState: IdAndNameType) {
-    if (selectedState) {
-      this.onFieldChange('state', selectedState, 'region', (id) => this.formDataService.getRegionsByStateId(id), ['region', 'location', 'section', 'lga', 'lcda'])
-    }
-  }
+  // onStateChange(selectedState: IdAndNameType) {
+  //   if (selectedState) {
+  //     this.onFieldChange('state', selectedState, 'region', (id) => this.formDataService.getRegionsByStateId(id), ['region', 'location', 'section', 'lga', 'lcda'])
+  //   }
+  // }
 
   onRegionChange(selectedRegion: IdAndNameType) {
     if (selectedRegion) {

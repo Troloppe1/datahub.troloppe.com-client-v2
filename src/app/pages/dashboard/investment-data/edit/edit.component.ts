@@ -48,7 +48,10 @@ export class EditComponent implements OnInit, OnDestroy {
     this.investmentData$ = this.investmentDataService
       .apiGetInvestmentDataById(id, true, this.sector)
       .pipe(
-        map((response) => response.data),
+        map((response) => {
+          console.log('Loaded investment data:', response);
+          return response.data
+        }),
         catchError((error) => {
           console.error('Error loading investment data:', error);
           // Navigate to not found or back to list on error
