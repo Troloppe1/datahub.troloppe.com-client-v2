@@ -4,7 +4,6 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { TextButtonComponent } from '@core/components/dashboard/text-btn/text-btn.component';
 import { ConfirmModalComponent } from '@core/components/dashboard/modals/confirm-modal/confirm-modal.component';
 import { ModalService } from '@shared/services/modal.service';
-import { StreetDataDetails } from '@core/classes/street-data-details';
 import { NotFoundComponent } from '@shared/components/not-found/not-found.component';
 import { constructionStatusOptions } from 'app/fixtures/street-data';
 import { AlertService } from '@shared/services/alert.service';
@@ -12,6 +11,7 @@ import { BackBtnComponent } from '@shared/components/back-btn/back-btn.component
 import { visibleTrigger } from '@shared/animations';
 import { StreetDataFormComponent } from '@core/components/dashboard/street-data-form/street-data-form.component';
 import { PermissionService } from '@shared/services/permission.service';
+import { StreetDataDetailsComponent } from '@core/components/dashboard/street-data-details.component';
 
 @Component({
   selector: 'app-edit-street-data',
@@ -26,7 +26,7 @@ import { PermissionService } from '@shared/services/permission.service';
   templateUrl: './edit.component.html',
   animations: [visibleTrigger]
 })
-export class EditComponent extends StreetDataDetails {
+export class EditComponent extends StreetDataDetailsComponent {
   confirmDeleteModalPropsData: ConfirmModalPropsType = {
     matIconName: 'delete',
     title: 'Confirm Delete',
@@ -128,7 +128,6 @@ export class EditComponent extends StreetDataDetails {
   }
 
   ngOnInit(): void {
-    this.setStreetDataId();
     this.initFormDataAndSomeProperties('edit');
     this.checkDataIsLoaded();
     this.setPermission()

@@ -55,8 +55,8 @@ export class ViewComponent implements OnInit, OnDestroy {
 
 
     this.route.paramMap.subscribe(params => {
-      this.fetchInvestmentData(+params.get('id')!);
-      this.fetchAmenities(this.investmentData?.id ?? +params.get('id')!);
+      this.fetchInvestmentData(+params.get('investmentDataId')!);
+      this.fetchAmenities(this.investmentData?.id ?? +params.get('investmentDataId')!);
     })
   }
 

@@ -3,11 +3,16 @@ import { UserRoles } from '@shared/enums/user-roles';
 import { StreetDataService } from '@core/services/dashboard/street-data.service';
 import { ActivatedRoute } from '@angular/router';
 import { PermissionService } from '@shared/services/permission.service';
-import { EventEmitter, inject } from '@angular/core';
+import { Component, EventEmitter, inject, Input } from '@angular/core';
 import { UtilsService } from '@shared/services/utils.service';
 import { LoaderService } from '@shared/services/loader.service';
 
-export class StreetDataDetails {
+@Component({
+  selector: 'app-street-data-details',
+  template: '',
+})
+export class StreetDataDetailsComponent {
+  @Input({required:true}) streetDataId!: number;
   streetDataFormGroup!: FormGroup;
   isPermitted = false;
   streetData!: StreetData;
@@ -17,24 +22,15 @@ export class StreetDataDetails {
   dataIsLoaded = false;
   dataNotFound = false;
 
-  protected streetDataId!: number;
 
   public utils = inject(UtilsService);
   protected streetDataService = inject(StreetDataService);
   protected loader = inject(LoaderService);
   public permissionService = inject(PermissionService);
-  private activatedRoute = inject(ActivatedRoute);
 
   dataLoadedEvent = new EventEmitter();
 
   constructor() {}
-
-  protected setStreetDataId() {
-    const id = this.activatedRoute.snapshot.paramMap.get('id');
-    if (id) {
-      this.streetDataId = +id;
-    }
-  }
 
   protected initFormDataAndSomeProperties(formType: Exclude<StreetDataFormType, 'new-create' | 'existing-create'> = 'view') {
     this.streetDataService.getStreetDataDetails(this.streetDataId).subscribe({

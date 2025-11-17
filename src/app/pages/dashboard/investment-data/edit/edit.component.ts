@@ -19,7 +19,7 @@ import { map, Observable, catchError, of, Subject, takeUntil } from 'rxjs';
   animations: [routeFadeInOut, visibleTrigger],
   host: {
     '[@routeFadeInOut]': 'true',
-    '[style.display]': 'contents',
+    '[style.display]': '"contents"',
   },
 })
 export class EditComponent implements OnInit, OnDestroy {
@@ -35,7 +35,7 @@ export class EditComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
-      const id = params['id'];
+      const id = params['investmentDataId'];
       this.sector = params['sector'] || 'residential';
 
       if (id) {

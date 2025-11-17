@@ -245,7 +245,9 @@
 
 <ng-container *ngIf="action==='edit'; else form">
   @if(data){
-  <ng-container *ngTemplateOutlet="form"></ng-container>
+    
+  <!-- <ng-container *ngTemplateOutlet="form"></ng-container> -->
+
   }
   @else {
   <div class="p-6">

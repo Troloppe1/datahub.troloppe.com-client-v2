@@ -1,13 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BackBtnComponent } from '@shared/components/back-btn/back-btn.component';
 import { TextButtonComponent } from '@core/components/dashboard/text-btn/text-btn.component';
-import { StreetDataDetails } from '@core/classes/street-data-details';
 import { NotFoundComponent } from '@shared/components/not-found/not-found.component';
 import { routeFadeInOut, visibleTrigger } from '@shared/animations';
 import { StreetDataFormComponent } from '@core/components/dashboard/street-data-form/street-data-form.component';
 import { NgIf } from '@angular/common';
+import { StreetDataDetailsComponent } from '@core/components/dashboard/street-data-details.component';
 
 @Component({
   selector: 'app-view-street-data',
@@ -22,10 +22,11 @@ import { NgIf } from '@angular/common';
   animations: [visibleTrigger, routeFadeInOut],
   host: {
     '[@routeFadeInOut]': 'true',
-    '[style.display]': 'contents',
+    '[style.display]': '"contents"',
   },
 })
-export class ViewComponent extends StreetDataDetails {
+export class ViewComponent extends StreetDataDetailsComponent {
+  @Input() name!: number;
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -98,7 +99,6 @@ export class ViewComponent extends StreetDataDetails {
   }
 
   ngOnInit(): void {
-    this.setStreetDataId();
     this.initFormDataAndSomeProperties();
     this.setPermission();
     this.checkDataIsLoaded();
