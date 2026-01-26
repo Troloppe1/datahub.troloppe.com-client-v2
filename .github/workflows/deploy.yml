@@ -31,8 +31,8 @@ jobs:
         run: npx ng build --configuration production
 
       # 5. Copy .htaccess to dist
-      - name: Copy .htaccess
-        run: cp .htaccess dist/datahub_app_v2/browser/.htaccess
+      # - name: Copy .htaccess
+      #   run: cp .htaccess dist/datahub_app_v2/browser/.htaccess
 
       # 6. Copy files to remote server
       - name: Copy files to remote server
