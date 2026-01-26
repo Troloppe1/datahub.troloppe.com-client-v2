@@ -110,12 +110,12 @@ export const routes: Routes = [
         title: 'Create Street Data',
       },
       {
-        path: 'street-data/:id',
+        path: 'street-data/:streetDataId',
         component: StreetDataViewComponent,
         title: 'Street Data',
       },
       {
-        path: 'street-data/:id/edit',
+        path: 'street-data/:streetDataId/edit',
         component: StreetDataEditComponent,
         title: 'Edit Street Data',
       },
