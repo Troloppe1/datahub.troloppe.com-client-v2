@@ -110,12 +110,12 @@ export const routes: Routes = [
         title: 'Create Street Data',
       },
       {
-        path: 'street-data/:id',
+        path: 'street-data/:streetDataId',
         component: StreetDataViewComponent,
         title: 'Street Data',
       },
       {
-        path: 'street-data/:id/edit',
+        path: 'street-data/:streetDataId/edit',
         component: StreetDataEditComponent,
         title: 'Edit Street Data',
       },
@@ -183,14 +183,14 @@ export const routes: Routes = [
         title: 'Create Investment Data',
       },
       {
-        path: 'investment-data/:sector/:id',
+        path: 'investment-data/:sector/:investmentDataId',
         component: InvestmentDataViewComponent,
         title: 'Investment Data',
       },
       {
-        path: 'investment-data/:sector/:id/edit',
+        path: 'investment-data/:sector/:investmentDataId/edit',
         component: InvestmentDataEditComponent,
-        title: 'Create Investment Data',
+        title: 'Edit Investment Data',
       },
 
       // Notification Route

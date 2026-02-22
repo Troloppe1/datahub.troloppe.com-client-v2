@@ -104,7 +104,6 @@ export class IndexComponent implements OnInit, OnDestroy {
       const sector = params['sector'];
       if (sector && this.investmentSectors.some(s => s.key === sector)) {
         this.selectedSector = sector;
-        console.log(sector)
       } else {
         // If no sector or invalid sector, redirect to residential
         this.angularRouter.navigate(['/dashboard/investment-data/residential'], { replaceUrl: true });
@@ -633,7 +632,6 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   onRowClicked(ev: any) {
     const data = ev.data;
-    console.log('Row clicked:', data);
     this.router.navigateByUrl(`/dashboard/investment-data/${this.selectedSector}/${data["property ID"]}`, data);
   }
 

@@ -31,8 +31,8 @@ jobs:
         run: npx ng build --configuration production
 
       # 5. Copy .htaccess to dist
-      - name: Copy .htaccess
-        run: cp .htaccess dist/datahub_app_v2/browser/.htaccess
+      # - name: Copy .htaccess
+      #   run: cp .htaccess dist/datahub_app_v2/browser/.htaccess
 
       # 6. Copy files to remote server
       - name: Copy files to remote server
@@ -57,3 +57,14 @@ jobs:
           source: dist/datahub_app_v2/browser
           target: ${{ secrets.SERVER_PATH }}
           strip_components: 3
+
+      - name: Fix group and permissions
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            sudo chgrp -R www-data ${{ secrets.SERVER_PATH }}
+            sudo chmod -R g+rwX ${{ secrets.SERVER_PATH }}

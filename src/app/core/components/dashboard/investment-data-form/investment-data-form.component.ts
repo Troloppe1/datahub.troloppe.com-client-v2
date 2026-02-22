@@ -44,7 +44,7 @@ export interface InvestmentSector {
   animations: [routeFadeInOut, visibleTrigger],
   host: {
     '[@routeFadeInOut]': 'true',
-    '[style.display]': 'contents',
+    '[style.display]': '"contents"',
   },
 })
 export class InvestmentDataFormComponent {
@@ -96,6 +96,7 @@ export class InvestmentDataFormComponent {
   }
 
   ngOnInit(): void {
+    console.log('INVESTMENT DATA FORM COMPONENT INIT - Action:', this.action, 'Data:', this.data);
     // Subscribe to route params to listen for future changes
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params: Params) => {
       this.updateSectorFromRoute(params);
@@ -110,15 +111,15 @@ export class InvestmentDataFormComponent {
     })
   }
 
+
+
   private initializeSectorFromRoute(): void {
     // Get sector from current route snapshot immediately
     const sectorFromUrl = this.route.snapshot.params['sector'];
-    console.log('Initializing sector from URL:', sectorFromUrl);
 
     if (sectorFromUrl && this.investmentSectors.some(s => s.key === sectorFromUrl)) {
       this.selectedSector = sectorFromUrl;
       this.currentSectorData = this.investmentSectors.find(s => s.key === sectorFromUrl);
-      console.log('Initialized with sector:', this.selectedSector);
     } else {
 
     }
@@ -151,7 +152,7 @@ export class InvestmentDataFormComponent {
           { field: "Annual Service Charge" },
           { field: "Contact Name" },
           { field: "Contact Number" },
-          { field: "Amenities" }
+          ...(this.action === "create" ? [{ field: "Amenities" }] : [])
         ];
 
       case 'land':
@@ -230,7 +231,7 @@ export class InvestmentDataFormComponent {
           { field: "No of Floors" },
           { field: "Contact Name" },
           { field: "Contact Number" },
-          { field: "Amenities" }
+          ...(this.action === "create" ? [{ field: "Amenities" }] : [])
         ];
 
       case 'industrial':
@@ -281,71 +282,69 @@ export class InvestmentDataFormComponent {
     }
   }
 
-  
+
 
   private normalizeInvestmentData(raw: DummyInvestmentData): any {
-  return {
-    state: raw.State,
-    region: raw.Region,
-    location: raw.Locality,
-    section: raw.Section,
-    lga: raw['L.G.A'],
-    lcda: raw['L.C.D.A'],
-    streetName: raw['Street Name'],
-    buildingType: raw['Building Type'],
-    noOfUnits: raw['No of Units'],
-    noOfBeds: raw['No of Beds'],
-    status: raw['Status'],
-    completionYear: raw['Completion Year'],
-    period: raw['Period'],
-    rentalPrice: this.unformatCurrency(raw['Rental Price']),
-    salePrice: this.unformatCurrency(raw['Sale Price']),
-    developer: raw['Developer'],
-    contractor: raw['Contractor'],
-    facilitiesManager: raw['Facilities Manager'],
-    annualServiceCharge: this.unformatCurrency(raw['Annual Service Charge']),
-    contactName: raw['Contact Name'],
-    contactNumber: raw['Contact Number'],
-    amenities: raw['Amenities'],
-    landArea: raw['Land Area'],
-    classification: raw['Classification'],
-    operator: raw['Operator'],
-    nlfa: raw['NLFA'],
-    noOfFloors: raw['No of Floors'],
-    numberOfKeys: raw['Number of Keys'],
-    dailyRate: this.unformatCurrency(raw['Daily Rate']),
-    roomType: raw['Room Type'],
-    noOfBay: raw['No of Bay'],
-    noOfPlots: raw['No of Plots'],
-    noOfStreets: raw['No of Streets'],
-    noOfSeats: raw['No of Seats'],
-    dailyRates: this.unformatCurrency(raw['Daily Rates'])
-  };
-}
+    return {
+      state: raw.State,
+      region: raw.Region,
+      location: raw.Locality,
+      section: raw.Section,
+      lga: raw['L.G.A'],
+      lcda: raw['L.C.D.A'],
+      streetName: raw['Street Name'],
+      buildingType: raw['Building Type'],
+      noOfUnits: raw['No of Units'],
+      noOfBeds: raw['No of Beds'],
+      status: raw['Status'],
+      completionYear: raw['Completion Year'],
+      period: raw['Period'],
+      rentalPrice: this.unformatCurrency(raw['Rental Price']),
+      salePrice: this.unformatCurrency(raw['Sale Price']),
+      developer: raw['Developer'],
+      contractor: raw['Contractor'],
+      facilitiesManager: raw['Facilities Manager'],
+      annualServiceCharge: this.unformatCurrency(raw['Annual Service Charge']),
+      contactName: raw['Contact Name'],
+      contactNumber: raw['Contact Number'],
+      amenities: raw['Amenities'],
+      landArea: raw['Land Area'],
+      classification: raw['Classification'],
+      operator: raw['Operator'],
+      nlfa: raw['NLFA'],
+      noOfFloors: raw['No of Floors'],
+      numberOfKeys: raw['Number of Keys'],
+      dailyRate: this.unformatCurrency(raw['Daily Rate']),
+      roomType: raw['Room Type'],
+      noOfBay: raw['No of Bay'],
+      noOfPlots: raw['No of Plots'],
+      noOfStreets: raw['No of Streets'],
+      noOfSeats: raw['No of Seats'],
+      dailyRates: this.unformatCurrency(raw['Daily Rates'])
+    };
+  }
 
-private unformatCurrency(value: string | number | null | undefined): number | null {
-  if (typeof value === 'number') return value;
-  if (!value || typeof value !== 'string') return null;
+  private unformatCurrency(value: string | number | null | undefined): number | null {
+    if (typeof value === 'number') return value;
+    if (!value || typeof value !== 'string') return null;
 
-  const cleaned = value.replace(/[₦,]/g, '');
-  const parsed = parseFloat(cleaned);
+    const cleaned = value.replace(/[₦,]/g, '');
+    const parsed = parseFloat(cleaned);
 
-  return isNaN(parsed) ? null : parsed;
-}
+    return isNaN(parsed) ? null : parsed;
+  }
 
 
 
 
   private updateSectorFromRoute(params: Params): void {
     const sectorFromUrl = params['sector'];
-    console.log('Route params changed, sector:', sectorFromUrl);
 
     if (sectorFromUrl && this.investmentSectors.some(s => s.key === sectorFromUrl)) {
       // Only update if sector actually changed
       if (this.selectedSector !== sectorFromUrl) {
         this.selectedSector = sectorFromUrl;
         this.currentSectorData = this.investmentSectors.find(s => s.key === sectorFromUrl);
-        console.log('Updated sector to:', this.selectedSector);
 
         // Update the form if needed based on sector
         this.updateFormBasedOnSector();
@@ -358,22 +357,21 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
     // Add logic here to show/hide fields or set default values
     if (this.investmentDataFormGroup && this.currentSectorData) {
       // Example: Set sector-specific defaults or configurations
-      console.log('Updating form for sector:', this.currentSectorData.label);
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-  if (this.action === 'edit' && changes['data']?.currentValue) {
-    const normalized = this.normalizeInvestmentData(changes['data'].currentValue);
-    this.investmentDataFormGroup.patchValue(normalized);
-    this.setupOptionsInEditMode(); // if needed
+    if (this.action === 'edit' && changes['data']?.currentValue) {
+      const normalized = this.normalizeInvestmentData(changes['data'].currentValue);
+      this.investmentDataFormGroup.patchValue(normalized);
+      this.setupOptionsInEditMode(); // if needed
+    }
+
   }
-}
 
   // Handle sector change
   onInvestmentSectorChange(sectorKey: string) {
     const selectedSectorData = this.investmentSectors.find(s => s.key === sectorKey);
-    console.log('Sector change requested:', sectorKey, 'Found:', selectedSectorData);
     if (selectedSectorData) {
       // Update the selectedSector immediately for UI feedback
       this.selectedSector = sectorKey;
@@ -386,7 +384,7 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
 
   private getInitialData(resource?: { name: string, data: IdAndNameType }) {
     const initialDataMap: Record<string, () => Observable<any>> = {
-      state: () => this.initialDataService.getAllStates(),
+      // state: () => this.initialDataService.getAllStates(),
       sector: () => this.initialDataService.getAllSectors(),
       offer: () => this.initialDataService.getAllOffers(),
     };
@@ -407,13 +405,14 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
   }
 
   private setupOptionsInEditMode() {
+    console.log('Setting up options in edit mode with data:', this.data);
     const mapper: Record<string, Observable<IdAndNameType[]>> = {
-      region: this.formDataService.getRegionsByStateId(this.data.state_id),
-      location: this.formDataService.getLocationsByRegionId(this.data.region_id),
-      section: this.formDataService.getSectionsByLocalityId(this.data.locality_id),
-      lga: this.formDataService.getLgasByRegionId(this.data.region_id),
-      lcda: this.formDataService.getLcdasByLgaId(this.data.lga_id),
-      subSector: this.formDataService.getSubSectorsBySectorId(this.data.sector_id),
+      region: this.formDataService.getRegions(),
+      location: this.formDataService.getLocationsByRegionId(this.data.property.source_data.region_id),
+      section: this.formDataService.getSectionsByLocalityId(this.data.property.source_data.locality_id),
+      lga: this.formDataService.getLgasByRegionId(this.data.property.source_data.region_id),
+      lcda: this.formDataService.getLcdasByLgaId(this.data.property.source_data.lga_id),
+      subSector: this.formDataService.getSubSectorsBySectorId(this.data.property.source_data.sector_id),
     }
 
     forkJoin(mapper).pipe(takeUntil(this.destroy$)).subscribe((result) => {
@@ -436,11 +435,11 @@ private unformatCurrency(value: string | number | null | undefined): number | nu
     this.investmentDataService.dropdownSelectedData[fieldName] = selectedItem
   }
 
-  onStateChange(selectedState: IdAndNameType) {
-    if (selectedState) {
-      this.onFieldChange('state', selectedState, 'region', (id) => this.formDataService.getRegionsByStateId(id), ['region', 'location', 'section', 'lga', 'lcda'])
-    }
-  }
+  // onStateChange(selectedState: IdAndNameType) {
+  //   if (selectedState) {
+  //     this.onFieldChange('state', selectedState, 'region', (id) => this.formDataService.getRegionsByStateId(id), ['region', 'location', 'section', 'lga', 'lcda'])
+  //   }
+  // }
 
   onRegionChange(selectedRegion: IdAndNameType) {
     if (selectedRegion) {

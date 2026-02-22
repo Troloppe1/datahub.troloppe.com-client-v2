@@ -55,8 +55,8 @@ export class ViewComponent implements OnInit, OnDestroy {
 
 
     this.route.paramMap.subscribe(params => {
-      this.fetchInvestmentData(+params.get('id')!);
-      this.fetchAmenities(this.investmentData?.id ?? +params.get('id')!);
+      this.fetchInvestmentData(+params.get('investmentDataId')!);
+      this.fetchAmenities(this.investmentData?.id ?? +params.get('investmentDataId')!);
     })
   }
 
@@ -123,7 +123,7 @@ export class ViewComponent implements OnInit, OnDestroy {
   }
 
   goToEditInvestmentData(): void {
-    const id = this.investmentData?.id;
+    const id = this.investmentData?.["property ID"];
     this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}/${id}/edit`);
   }
 
@@ -181,7 +181,6 @@ export class ViewComponent implements OnInit, OnDestroy {
           if (!this.investmentData) {
             this.router.navigateByUrl('/not-found', { skipLocationChange: true });
           }
-          console.log("I am here");
           this.loaderService.stop();
         },
         error: (err) => {

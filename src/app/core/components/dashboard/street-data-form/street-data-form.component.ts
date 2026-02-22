@@ -92,7 +92,6 @@ export class StreetDataFormComponent {
 
     // Save to storage whenever form changes
     this.streetDataFormGroup.valueChanges.subscribe(() => {
-      console.log()
       this.saveFormToStorage();
     });
   }
@@ -290,7 +289,6 @@ export class StreetDataFormComponent {
     */
   private saveFormToStorage() {
     const val = this.streetDataFormGroup.value;
-    console.log("Saving form to storage:", val);
     sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.streetDataFormGroup.value));
   }
 

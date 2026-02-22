@@ -30,6 +30,11 @@ export class FormDataService {
     return this.getPropertyData(url, "lgas", invalidateCache)
   }
 
+  getRegions(invalidateCache = true) {
+    const url = '/regions';
+    return this.getPropertyData(url, 'regions', invalidateCache)
+  }
+
   getLcdasByLgaId(lgaId: number, invalidateCache = true) {
     const url = `/lcdas?lga_id=${lgaId}`;
     return this.getPropertyData(url, "lcdas", invalidateCache)
