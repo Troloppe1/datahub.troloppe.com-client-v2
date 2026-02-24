@@ -1,17 +1,32 @@
-<div class="my-4 flex justify-between items-center">
+<section class="dashboard-content-panel brand-reveal">
+<div class="dashboard-section-toolbar">
     <text-button withIcon="group" [isFlexed]="true" (clickEvent)="goToViewAgents()" text="View Agents">
     </text-button>
     <app-create-and-download-external-listings-btns/>
 </div>
 
-<ag-grid-angular class="!bg-transparent h-[calc(100vh-100px)]" rowClass="cursor-pointer" rowModelType="infinite"
-    [rowHeight]="40" [pagination]="false" [class.ag-theme-quartz-dark]="tableThemeColor === 'dark'"
-    [datasource]="datasource" [infiniteInitialRowCount]="initialRowCount" [cacheBlockSize]="pageSize"
-    [maxBlocksInCache]="2" [class.ag-theme-quartz]="tableThemeColor === 'light'" [columnDefs]="colDefs"
-    [defaultColDef]="defaultColDefs" [animateRows]="true" [gridOptions]="gridOptions" [cacheBlockSize]="20"
-    (rowClicked)="onRowClicked($event)" [loading]="isLoading" (gridReady)="onGridReady($event)">
+<ag-grid-angular
+  class="!bg-transparent h-[calc(100vh-100px)]"
+  rowClass="cursor-pointer"
+  rowModelType="infinite"
+  [rowHeight]="40"
+  [pagination]="false"
+  [class.ag-theme-quartz-dark]="tableThemeColor === 'dark'"
+  [datasource]="datasource"
+  [infiniteInitialRowCount]="initialRowCount"
+  [cacheBlockSize]="pageSize"
+  [maxBlocksInCache]="2"
+  [class.ag-theme-quartz]="tableThemeColor === 'light'"
+  [columnDefs]="colDefs"
+  [defaultColDef]="defaultColDefs"
+  [animateRows]="true"
+  [gridOptions]="gridOptions"
+  (rowClicked)="onRowClicked($event)"
+  [loading]="isLoading"
+  (gridReady)="onGridReady($event)">
 </ag-grid-angular>
 
-<div class="text-sm mt-2 font-semibold">
+<div class="dashboard-total-records">
     Total Records: {{ totalRecords }}
 </div>
+</section>

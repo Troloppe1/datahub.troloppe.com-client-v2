@@ -148,7 +148,12 @@ export class IndexComponent implements OnDestroy {
     },
     autoHeight: false,
     cellClass: '!flex !items-center',
-    cellStyle: { 'white-space': 'normal', 'word-wrap': 'break-word', 'height': 'max-content' },
+    cellStyle: {
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    },
+    tooltipValueGetter: (params: any) => params.value ?? '',
     width: 150,
   };
   tableThemeColor: 'dark' | 'light' = 'light';
