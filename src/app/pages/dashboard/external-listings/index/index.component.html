@@ -1,12 +1,8 @@
-<div class="my-4 flex justify-between items-center">
-  <text-button
-    withIcon="group"
-    [isFlexed]="true"
-    (clickEvent)="goToViewAgents()"
-    text="View Agents"
-  >
-  </text-button>
-  <app-create-and-download-external-listings-btns />
+<section class="dashboard-content-panel brand-reveal">
+<div class="dashboard-section-toolbar">
+    <text-button withIcon="group" [isFlexed]="true" (clickEvent)="goToViewAgents()" text="View Agents">
+    </text-button>
+    <app-create-and-download-external-listings-btns/>
 </div>
 
 <ag-grid-angular
@@ -27,8 +23,10 @@
   [gridOptions]="gridOptions"
   (rowClicked)="onRowClicked($event)"
   [loading]="isLoading"
-  (gridReady)="onGridReady($event)"
->
+  (gridReady)="onGridReady($event)">
 </ag-grid-angular>
 
-<div class="text-sm mt-2 font-semibold">Total Records: {{ totalRecords }}</div>
+<div class="dashboard-total-records">
+    Total Records: {{ totalRecords }}
+</div>
+</section>

@@ -1,9 +1,16 @@
 import { Inject, Injectable } from '@angular/core';
 import { ClientStorageService } from './client-storage.service';
-import { BehaviorSubject, map, of, Subscription, switchMap, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  map,
+  of,
+  Subscription,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
 import { COLOR_SCHEME_STORE_KEY } from './constants/localstorage';
-import { MediaQueryService } from './media-query.service';
-import { PREFERS_COLOR_DARK_SCHEME_QUERY } from './constants/media-query';
 import { DOCUMENT } from '@angular/common';
 
 @Injectable({
@@ -11,13 +18,14 @@ import { DOCUMENT } from '@angular/common';
 })
 export class ColorSchemeService {
   public schemes = ['auto', 'light', 'dark'];
+  private readonly autoLightStartHour = 6;
+  private readonly autoDarkStartHour = 18;
 
   private colorScheme$ = new BehaviorSubject<ColorSchemeType | null>('auto');
   private colorSchemeSubscription!: Subscription;
 
   constructor(
     private css: ClientStorageService,
-    private mediaQuery: MediaQueryService,
     @Inject(DOCUMENT) private document: Document
   ) {
     this.retrieveColorScheme();
@@ -33,10 +41,12 @@ export class ColorSchemeService {
         if (value && value !== 'auto') {
           return of(value);
         }
-        return this.mediaQuery.observe(PREFERS_COLOR_DARK_SCHEME_QUERY).pipe(
-          map((value) => {
-            return value ? 'dark' : 'light';
-          })
+
+        // Auto mode follows local time: day -> light, night -> dark.
+        // Re-evaluate periodically so the theme can switch automatically.
+        return timer(0, 60_000).pipe(
+          map(() => this.getTimeBasedScheme()),
+          distinctUntilChanged()
         );
       })
     );
@@ -86,6 +96,13 @@ export class ColorSchemeService {
 
   private getColorSchemeFromLocalStore() {
     return this.css.local().get<ColorSchemeType>(COLOR_SCHEME_STORE_KEY);
+  }
+
+  private getTimeBasedScheme(): Exclude<ColorSchemeType, 'auto'> {
+    const hour = new Date().getHours();
+    return hour >= this.autoLightStartHour && hour < this.autoDarkStartHour
+      ? 'light'
+      : 'dark';
   }
 
   private setThemeToDocument(colorScheme: Exclude<ColorSchemeType, 'auto'>) {
