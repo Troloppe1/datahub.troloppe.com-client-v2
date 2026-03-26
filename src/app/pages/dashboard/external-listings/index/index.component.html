@@ -2,7 +2,11 @@
 <div class="dashboard-section-toolbar">
     <text-button withIcon="group" [isFlexed]="true" (clickEvent)="goToViewAgents()" text="View Agents">
     </text-button>
-    <app-create-and-download-external-listings-btns/>
+    <div class="flex items-center gap-2">
+      <text-button withIcon="filter_alt_off" [isFlexed]="true" (clickEvent)="clearAllFilters()" text="Clear filters">
+      </text-button>
+      <app-create-and-download-external-listings-btns />
+    </div>
 </div>
 
 <ag-grid-angular

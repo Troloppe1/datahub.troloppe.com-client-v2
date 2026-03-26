@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TextButtonComponent } from "../../../../../core/components/dashboard/text-btn/text-btn.component";
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { ColDef, GridApi, GridReadyEvent, RowClickedEvent } from 'ag-grid-community';
 import { Subject, takeUntil } from 'rxjs';
 import { ColorSchemeService } from '@shared/services/color-scheme.service';
 import { ListingsAgentsService } from '@core/services/dashboard/listings-agents.service';
@@ -17,6 +17,7 @@ import { RouterService } from '@core/services/router.service';
 export class IndexComponent implements OnDestroy, OnInit {
   tableThemeColor: 'dark' | 'light' = 'light';
   loading = true
+  private gridApi: GridApi | null = null;
   colDefs: ColDef<any>[] = [
     {
       headerName: 'S/N', width: 75, filter: false, field: 'id', valueGetter: params => {
@@ -62,6 +63,15 @@ export class IndexComponent implements OnDestroy, OnInit {
     private readonly colorScheme: ColorSchemeService,
     private readonly listingAgentsService: ListingsAgentsService
   ) { }
+
+  onGridReady(params: GridReadyEvent) {
+    this.gridApi = params.api;
+  }
+
+  clearAllFilters() {
+    // Clears ag-grid column filter models only (does not reset sort).
+    this.gridApi?.setFilterModel(null);
+  }
 
   ngOnInit(): void {
     this.colorScheme
