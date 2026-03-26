@@ -11,6 +11,8 @@
   </div>
 
   <div class="flex items-center gap-2">
+    <text-button withIcon="filter_alt_off" [isFlexed]="true" (clickEvent)="clearAllFilters()" text="Clear filters">
+    </text-button>
     <create-and-download-investment-data-btns [sectorKey]="currentSectorData?.key || 'Residential'"
       (sectorClicked)="logSector($event)">
     </create-and-download-investment-data-btns>

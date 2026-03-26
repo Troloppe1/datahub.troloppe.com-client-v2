@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CreateAndDownloadInvestmentDataBtnsComponent } from "@core/components/dashboard/create-and-download-investment-data-btns.component";
 import { DummyInvestmentDataService } from '@core/services/dashboard/dummy-investment-data.service';
+import { TextButtonComponent } from '@core/components/dashboard/text-btn/text-btn.component';
 
 export interface InvestmentSector {
   key: string;
@@ -23,7 +24,13 @@ export interface InvestmentSector {
 @Component({
   selector: 'investment-data-index',
   standalone: true,
-  imports: [AgGridAngular, CommonModule, FormsModule, CreateAndDownloadInvestmentDataBtnsComponent],
+  imports: [
+    AgGridAngular,
+    CommonModule,
+    FormsModule,
+    TextButtonComponent,
+    CreateAndDownloadInvestmentDataBtnsComponent,
+  ],
   templateUrl: './index.component.html',
   styleUrl: './index.component.scss'
 })
@@ -131,6 +138,17 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   onGridReady(params: any) {
     this.gridApi = params.api;
+  }
+
+  clearAllFilters() {
+    if (!this.gridApi) return;
+
+    // Clears ag-grid column filter models only (does not reset sort).
+    this.gridApi.setFilterModel(null);
+
+    // Infinite row model: clear cached blocks and force a reload.
+    this.dataCache.clear();
+    this.gridApi.purgeInfiniteCache();
   }
 
   logSector(sector: string) {

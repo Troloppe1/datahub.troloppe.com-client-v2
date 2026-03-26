@@ -173,6 +173,18 @@ export class IndexComponent implements OnDestroy {
     this.gridApi.setFilterModel(this.getFilterModelFromLocalStorage() || {});
   }
 
+  clearAllFilters() {
+    if (!this.gridApi) return;
+
+    // Clears ag-grid column filter models only (does not reset sort).
+    this.gridApi.setFilterModel(null);
+
+    // Clear persisted filters + cached data so the infinite model reloads cleanly.
+    this.clearFilterModelFromLocalStorage();
+    this.dataCache.clear();
+    this.gridApi.purgeInfiniteCache();
+  }
+
   constructor(
     private els: ExternalListingsService,
     private router: RouterService,
@@ -211,9 +223,16 @@ export class IndexComponent implements OnDestroy {
           limit: this.pageSize,
           currentPage,
         }
-        if (Object.keys(params.filterModel).length > 0) {
+        const hasFilters =
+          params.filterModel && Object.keys(params.filterModel).length > 0;
+
+        if (hasFilters) {
           paginatedListingParams.agFilterModel = params.filterModel
           this.setFilterModelToLocalStorage(params.filterModel);
+        } else {
+          // If filters are cleared in the UI, ensure we also clear the persisted model
+          // so it doesn't re-apply on reload.
+          this.clearFilterModelFromLocalStorage();
         }
         if (params.sortModel.length > 0) {
           const sort = params.sortModel[0].sort
@@ -297,6 +316,10 @@ export class IndexComponent implements OnDestroy {
 
   private setFilterModelToLocalStorage(filterModel: any) {
     sessionStorage.setItem('externalListingsFilterModel', JSON.stringify(filterModel));
+  }
+
+  private clearFilterModelFromLocalStorage() {
+    sessionStorage.removeItem('externalListingsFilterModel');
   }
 
 }
