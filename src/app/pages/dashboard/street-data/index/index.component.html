@@ -1,7 +1,11 @@
 <div class="my-4 flex justify-between items-center">
     <dashboard-active-location-indicator />
     <div class="flex items-center gap-2">
-        <text-button withIcon="filter_alt_off" [isFlexed]="true" (clickEvent)="clearAllFilters()" text="Clear filters">
+        <text-button
+            [withIcon]="hasActiveFilters ? 'filter_alt' : 'filter_alt_off'"
+            [state]="hasActiveFilters ? undefined : 'neutral'"
+            ariaLabel="Clear filters"
+            (clickEvent)="clearAllFilters()">
         </text-button>
         <dashboard-create-and-download-street-data-btns />
     </div>
@@ -10,4 +14,5 @@
 <ag-grid-angular [loading]="isLoading" [rowData]="rowData | async" class="!bg-transparent h-[calc(100vh-220px)]"
     [class.ag-theme-quartz-dark]="tableThemeColor === 'dark'" [class.ag-theme-quartz]="tableThemeColor === 'light'"
     [columnDefs]="colDefs" [defaultColDef]="defaultColDefs" [animateRows]="true" (cellClicked)="onCellClick($event)"
-    rowClass="cursor-pointer" [gridOptions]="gridOptions" (gridReady)="onGridReady($event)"></ag-grid-angular>
+    rowClass="cursor-pointer" [gridOptions]="gridOptions" (gridReady)="onGridReady($event)"
+    (filterChanged)="onFilterChanged()"></ag-grid-angular>

@@ -13,17 +13,17 @@ import { NgIf } from '@angular/common';
       [disabled]="disabled"
       [name]="name"
       [value]="value"
+      [attr.aria-label]="ariaLabel || text"
       [class]="
         utils.cn(
-          'btn btn-ghost btn-small text-xs md:text-sm flex items-center gap-1 font-medium tracking-wider text-secondary',
+          'btn btn-ghost btn-small text-xs md:text-sm flex items-center gap-1 font-medium tracking-wider',
           class,
           {
             'p-2 py-1 text-xs font-normal': small
           },
           {
-            'text-error': state === 'error'
-          }, 
-          {
+            'text-secondary': !state,
+            'text-error': state === 'error',
             'text-neutral': state === 'neutral'
           }
         )
@@ -33,25 +33,28 @@ import { NgIf } from '@angular/common';
       <my-mat-icon *ngIf="withIcon" class="font-black">{{
         withIcon
       }}</my-mat-icon>
-      <span [class]="utils.cn({ 'hidden md:inline': isFlexed })">
-        @if (small) {
-        {{ text }}
-        } @else {
-        {{ text.toUpperCase() }}
-        }
-      </span>
+      @if (text) {
+        <span [class]="utils.cn({ 'hidden md:inline': isFlexed })">
+          @if (small) {
+          {{ text }}
+          } @else {
+          {{ text.toUpperCase() }}
+          }
+        </span>
+      }
     </button>
   `,
 })
 export class TextButtonComponent {
   @Input() text = '';
   @Input() class = '';
+  @Input() ariaLabel = '';
   @Input() type: 'button' | 'submit' | 'reset' | 'menu' = 'button';
   @Input() small = false;
   @Input() withIcon = '';
   @Input() isFlexed = false;
   @Input() disabled = false;
-  @Input() state!: 'error' | 'neutral';
+  @Input() state?: 'error' | 'neutral';
   @Input() name = '';
   @Input() value = '';
 

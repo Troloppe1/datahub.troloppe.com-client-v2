@@ -90,6 +90,7 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   dataCache: Map<string, { data: any, totalRecords: number }> = new Map();
   gridApi!: any;
+  hasActiveFilters = false;
 
   constructor(
     private investmentDataService: InvestmentDataService,
@@ -138,6 +139,7 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   onGridReady(params: any) {
     this.gridApi = params.api;
+    this.updateHasActiveFilters();
   }
 
   clearAllFilters() {
@@ -145,10 +147,20 @@ export class IndexComponent implements OnInit, OnDestroy {
 
     // Clears ag-grid column filter models only (does not reset sort).
     this.gridApi.setFilterModel(null);
+    this.updateHasActiveFilters();
 
     // Infinite row model: clear cached blocks and force a reload.
     this.dataCache.clear();
     this.gridApi.purgeInfiniteCache();
+  }
+
+  onFilterChanged() {
+    this.updateHasActiveFilters();
+  }
+
+  private updateHasActiveFilters() {
+    const model = this.gridApi?.getFilterModel?.() ?? {};
+    this.hasActiveFilters = Object.keys(model).length > 0;
   }
 
   logSector(sector: string) {

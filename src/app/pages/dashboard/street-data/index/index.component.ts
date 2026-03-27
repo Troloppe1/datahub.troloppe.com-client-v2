@@ -94,6 +94,7 @@ export class IndexComponent {
   isLoading = true;
   private actualColorSchemeSubscription!: Subscription;
   private gridApi: GridApi | null = null;
+  hasActiveFilters = false;
 
 
   constructor(
@@ -123,11 +124,22 @@ export class IndexComponent {
 
   onGridReady(params: GridReadyEvent) {
     this.gridApi = params.api;
+    this.updateHasActiveFilters();
   }
 
   clearAllFilters() {
     // Clears ag-grid column filter models only (does not reset sort).
     this.gridApi?.setFilterModel(null);
+    this.updateHasActiveFilters();
+  }
+
+  onFilterChanged() {
+    this.updateHasActiveFilters();
+  }
+
+  private updateHasActiveFilters() {
+    const model = this.gridApi?.getFilterModel() ?? {};
+    this.hasActiveFilters = Object.keys(model).length > 0;
   }
 
   onCellClick(event: CellClickedEvent) {

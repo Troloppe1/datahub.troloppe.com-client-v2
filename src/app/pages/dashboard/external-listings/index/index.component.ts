@@ -167,10 +167,12 @@ export class IndexComponent implements OnDestroy {
 
   dataCache: Map<string, { data: any, totalRecords: number }> = new Map()
   gridApi!: any;
+  hasActiveFilters = false;
 
   onGridReady(params: any) {
     this.gridApi = params.api;
     this.gridApi.setFilterModel(this.getFilterModelFromLocalStorage() || {});
+    this.updateHasActiveFilters();
   }
 
   clearAllFilters() {
@@ -178,11 +180,16 @@ export class IndexComponent implements OnDestroy {
 
     // Clears ag-grid column filter models only (does not reset sort).
     this.gridApi.setFilterModel(null);
+    this.updateHasActiveFilters();
 
     // Clear persisted filters + cached data so the infinite model reloads cleanly.
     this.clearFilterModelFromLocalStorage();
     this.dataCache.clear();
     this.gridApi.purgeInfiniteCache();
+  }
+
+  onFilterChanged() {
+    this.updateHasActiveFilters();
   }
 
   constructor(
@@ -320,6 +327,11 @@ export class IndexComponent implements OnDestroy {
 
   private clearFilterModelFromLocalStorage() {
     sessionStorage.removeItem('externalListingsFilterModel');
+  }
+
+  private updateHasActiveFilters() {
+    const model = this.gridApi?.getFilterModel?.() ?? {};
+    this.hasActiveFilters = Object.keys(model).length > 0;
   }
 
 }

@@ -3,7 +3,11 @@
     <text-button withIcon="group" [isFlexed]="true" (clickEvent)="goToViewAgents()" text="View Agents">
     </text-button>
     <div class="flex items-center gap-2">
-      <text-button withIcon="filter_alt_off" [isFlexed]="true" (clickEvent)="clearAllFilters()" text="Clear filters">
+      <text-button
+        [withIcon]="hasActiveFilters ? 'filter_alt' : 'filter_alt_off'"
+        [state]="hasActiveFilters ? undefined : 'neutral'"
+        ariaLabel="Clear filters"
+        (clickEvent)="clearAllFilters()">
       </text-button>
       <app-create-and-download-external-listings-btns />
     </div>
@@ -27,7 +31,8 @@
   [gridOptions]="gridOptions"
   (rowClicked)="onRowClicked($event)"
   [loading]="isLoading"
-  (gridReady)="onGridReady($event)">
+  (gridReady)="onGridReady($event)"
+  (filterChanged)="onFilterChanged()">
 </ag-grid-angular>
 
 <div class="dashboard-total-records">

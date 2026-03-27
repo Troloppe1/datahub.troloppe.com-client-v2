@@ -18,6 +18,7 @@ export class IndexComponent implements OnDestroy, OnInit {
   tableThemeColor: 'dark' | 'light' = 'light';
   loading = true
   private gridApi: GridApi | null = null;
+  hasActiveFilters = false;
   colDefs: ColDef<any>[] = [
     {
       headerName: 'S/N', width: 75, filter: false, field: 'id', valueGetter: params => {
@@ -66,11 +67,22 @@ export class IndexComponent implements OnDestroy, OnInit {
 
   onGridReady(params: GridReadyEvent) {
     this.gridApi = params.api;
+    this.updateHasActiveFilters();
   }
 
   clearAllFilters() {
     // Clears ag-grid column filter models only (does not reset sort).
     this.gridApi?.setFilterModel(null);
+    this.updateHasActiveFilters();
+  }
+
+  onFilterChanged() {
+    this.updateHasActiveFilters();
+  }
+
+  private updateHasActiveFilters() {
+    const model = this.gridApi?.getFilterModel() ?? {};
+    this.hasActiveFilters = Object.keys(model).length > 0;
   }
 
   ngOnInit(): void {
