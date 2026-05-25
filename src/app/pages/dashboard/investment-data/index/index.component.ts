@@ -472,7 +472,6 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   private initializeRealDataSource() {
-    console.log(this.selectedSectorId);
     // Your existing API-based initialization code
     const paginatedParams: PaginatedInvestmentParams = {
       limit: 1,
