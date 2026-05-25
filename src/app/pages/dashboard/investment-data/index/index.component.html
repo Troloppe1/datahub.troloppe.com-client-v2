@@ -1,33 +1,64 @@
 <section class="dashboard-content-panel brand-reveal">
-<div class="dashboard-section-toolbar">
-  <div class="flex items-center gap-4">
-    <label for="sector-select" class="text-sm font-medium">Investment Sector:</label>
-    <select id="sector-select" [(ngModel)]="selectedSector" (ngModelChange)="onSectorChange($event)"
-      class="dashboard-select min-w-[170px]">
-      <option *ngFor="let sector of investmentSectors" [value]="sector.key">
-        {{ sector.label }}
-      </option>
-    </select>
+  <div class="dashboard-section-toolbar">
+    <div class="flex items-center gap-4">
+      <label for="sector-select" class="text-sm font-medium"
+        >Investment Sector:</label
+      >
+      <select
+        id="sector-select"
+        [(ngModel)]="selectedSectorId"
+        (ngModelChange)="onSectorChange($event)"
+        class="dashboard-select min-w-[170px]"
+      >
+        <option
+          *ngFor="let sector of investmentSectors$ | async"
+          [value]="sector.key"
+        >
+          {{ sector.label }}
+        </option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <text-button
+        withIcon="filter_alt_off"
+        [isFlexed]="true"
+        (clickEvent)="clearAllFilters()"
+        text="Clear filters"
+      >
+      </text-button>
+      <create-and-download-investment-data-btns
+        [sectorKey]="currentSectorData?.label || 'Residential'"
+        (sectorClicked)="logSector($event)"
+      >
+      </create-and-download-investment-data-btns>
+    </div>
   </div>
 
-  <div class="flex items-center gap-2">
-    <text-button withIcon="filter_alt_off" [isFlexed]="true" (clickEvent)="clearAllFilters()" text="Clear filters">
-    </text-button>
-    <create-and-download-investment-data-btns [sectorKey]="currentSectorData?.key || 'Residential'"
-      (sectorClicked)="logSector($event)">
-    </create-and-download-investment-data-btns>
+  <ag-grid-angular
+    class="!bg-transparent h-[calc(100vh-100px)]"
+    rowClass="cursor-pointer"
+    rowModelType="infinite"
+    [rowHeight]="40"
+    [pagination]="false"
+    [class.ag-theme-quartz-dark]="tableThemeColor === 'dark'"
+    [datasource]="datasource"
+    [infiniteInitialRowCount]="initialRowCount"
+    [cacheBlockSize]="pageSize"
+    [maxBlocksInCache]="2"
+    [class.ag-theme-quartz]="tableThemeColor === 'light'"
+    [columnDefs]="colDefs"
+    [defaultColDef]="defaultColDefs"
+    [animateRows]="true"
+    [gridOptions]="gridOptions"
+    (rowClicked)="onRowClicked($event)"
+    [loading]="isLoading"
+    (gridReady)="onGridReady($event)"
+  >
+  </ag-grid-angular>
+
+  <div class="dashboard-total-records">
+    Total Records: {{ totalRecords }} | Sector:
+    {{ currentSectorData?.label || "Unknown" }}
   </div>
-</div>
-
-<ag-grid-angular class="!bg-transparent h-[calc(100vh-100px)]" rowClass="cursor-pointer" rowModelType="infinite"
-  [rowHeight]="40" [pagination]="false" [class.ag-theme-quartz-dark]="tableThemeColor === 'dark'"
-  [datasource]="datasource" [infiniteInitialRowCount]="initialRowCount" [cacheBlockSize]="pageSize"
-  [maxBlocksInCache]="2" [class.ag-theme-quartz]="tableThemeColor === 'light'" [columnDefs]="colDefs"
-  [defaultColDef]="defaultColDefs" [animateRows]="true" [gridOptions]="gridOptions" (rowClicked)="onRowClicked($event)"
-  [loading]="isLoading" (gridReady)="onGridReady($event)">
-</ag-grid-angular>
-
-<div class="dashboard-total-records">
-  Total Records: {{ totalRecords }} | Sector: {{ currentSectorData?.label || 'Unknown' }}
-</div>
 </section>

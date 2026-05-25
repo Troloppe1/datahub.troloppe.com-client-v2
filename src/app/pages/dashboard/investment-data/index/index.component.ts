@@ -1,6 +1,9 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { InvestmentDataService } from '@core/services/dashboard/investment-data.service';
+import {
+  InvestmentDataService,
+  InvestmentSector,
+} from '@core/services/dashboard/investment-data.service';
 import { RouterService } from '@core/services/router.service';
 import { AuthService } from '@shared/services/auth.service';
 import { ColorSchemeService } from '@shared/services/color-scheme.service';
@@ -8,18 +11,19 @@ import { PermissionService } from '@shared/services/permission.service';
 import { User } from '@shared/services/types';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridOptions } from 'ag-grid-community';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import {
+  combineLatest,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CreateAndDownloadInvestmentDataBtnsComponent } from "@core/components/dashboard/create-and-download-investment-data-btns.component";
+import { CreateAndDownloadInvestmentDataBtnsComponent } from '@core/components/dashboard/create-and-download-investment-data-btns.component';
 import { DummyInvestmentDataService } from '@core/services/dashboard/dummy-investment-data.service';
 import { TextButtonComponent } from '@core/components/dashboard/text-btn/text-btn.component';
-
-export interface InvestmentSector {
-  key: string;
-  label: string;
-  route: string;
-}
 
 @Component({
   selector: 'investment-data-index',
@@ -32,29 +36,43 @@ export interface InvestmentSector {
     CreateAndDownloadInvestmentDataBtnsComponent,
   ],
   templateUrl: './index.component.html',
-  styleUrl: './index.component.scss'
+  styleUrl: './index.component.scss',
 })
 export class IndexComponent implements OnInit, OnDestroy {
+  // investmentSectors: InvestmentSector[] = [
+  //   {
+  //     key: 'residential',
+  //     label: 'Residential',
+  //     route: 'investment-data/residential',
+  //   },
+  //   { key: 'land', label: 'Land', route: 'investment-data/land' },
+  //   {
+  //     key: 'healthcare',
+  //     label: 'Healthcare',
+  //     route: 'investment-data/healthcare',
+  //   },
+  //   { key: 'retail', label: 'Retail', route: 'investment-data/retail' },
+  //   { key: 'hotel', label: 'Hotel', route: 'investment-data/hotel' },
+  //   { key: 'street', label: 'Street', route: 'investment-data/street' },
+  //   {
+  //     key: 'industrial',
+  //     label: 'Industrial',
+  //     route: 'investment-data/industrial',
+  //   },
+  //   { key: 'office', label: 'Office', route: 'investment-data/office' },
+  //   { key: 'events', label: 'Events', route: 'investment-data/events' },
+  // ];
+  investmentSectors$: Observable<InvestmentSector[]> =
+    this.investmentDataService.getSectors();
 
-  investmentSectors: InvestmentSector[] = [
-    { key: 'residential', label: 'Residential', route: 'investment-data/residential' },
-    { key: 'land', label: 'Land', route: 'investment-data/land' },
-    { key: 'healthcare', label: 'Healthcare', route: 'investment-data/healthcare' },
-    { key: 'retail', label: 'Retail', route: 'investment-data/retail' },
-    { key: 'hotel', label: 'Hotel', route: 'investment-data/hotel' },
-    { key: 'street', label: 'Street', route: 'investment-data/street' },
-    { key: 'industrial', label: 'Industrial', route: 'investment-data/industrial' },
-    { key: 'office', label: 'Office', route: 'investment-data/office' },
-    { key: 'events', label: 'Events', route: 'investment-data/events' }
-  ];
-
-  selectedSector: string = 'residential';
+  selectedSectorId: number = 1;
+  selectedSectorName: string = 'residential';
   currentSectorData: InvestmentSector | undefined;
 
   gridOptions: GridOptions = {
     suppressFieldDotNotation: true,
     rowBuffer: 5,
-    getRowId: params => `${params.data.id}`,
+    getRowId: (params) => `${params.data.id}`,
     overlayNoRowsTemplate: `<span class="ag-overlay-loading-center">No Investment Data Available</span>`,
   };
 
@@ -66,7 +84,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     filter: true,
     filterParams: {
       debounceMs: 500,
-      filterOptions: ['contains']
+      filterOptions: ['contains'],
     },
     autoHeight: false,
     cellClass: '!flex !items-center',
@@ -88,7 +106,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   destroy$ = new Subject<void>();
   currentUser!: User;
 
-  dataCache: Map<string, { data: any, totalRecords: number }> = new Map();
+  dataCache: Map<string, { data: any; totalRecords: number }> = new Map();
   gridApi!: any;
 
   constructor(
@@ -100,32 +118,68 @@ export class IndexComponent implements OnInit, OnDestroy {
     public colorScheme: ColorSchemeService,
     public permission: PermissionService,
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
-  ) { }
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   private useDummyData = false; // Set to true for testing, false for production
 
   ngOnInit() {
     // Get current user
-    this.authService.onCurrentUser().pipe(takeUntil(this.destroy$)).subscribe((v) => {
-      this.currentUser = v!;
-    });
+    this.authService
+      .onCurrentUser()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((v) => {
+        this.currentUser = v!;
+      });
+
+    combineLatest([this.route.params, this.investmentSectors$])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([params, investmentSectors]) => {
+        const sector = params['sector']?.toLowerCase();
+
+        const selectedSector = investmentSectors.find(
+          (s) => s.label.toLowerCase() === sector,
+        );
+
+        if (!selectedSector) {
+          this.angularRouter.navigate(
+            ['/dashboard/investment-data/residential'],
+            {
+              replaceUrl: true,
+            },
+          );
+          return;
+        }
+
+        this.selectedSectorId = selectedSector.key;
+        this.selectedSectorName = selectedSector.label.toLowerCase();
+
+        this.currentSectorData = selectedSector;
+
+        this.setupColumnDefinitions();
+        this.initializeDataSource();
+      });
 
     // Listen to route params to get selected sector
-    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
-      const sector = params['sector'];
-      if (sector && this.investmentSectors.some(s => s.key === sector)) {
-        this.selectedSector = sector;
-      } else {
-        // If no sector or invalid sector, redirect to residential
-        this.angularRouter.navigate(['/dashboard/investment-data/residential'], { replaceUrl: true });
-        return;
-      }
+    // this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+    //   const sector = params['sector'];
+    //   if (sector && this.investmentSectors!.some((s) => s.key === sector)) {
+    //     this.selectedSectorId = sector;
+    //   } else {
+    //     // If no sector or invalid sector, redirect to residential
+    //     this.angularRouter.navigate(
+    //       ['/dashboard/investment-data/residential'],
+    //       { replaceUrl: true },
+    //     );
+    //     return;
+    //   }
 
-      this.currentSectorData = this.investmentSectors.find(s => s.key === this.selectedSector);
-      this.setupColumnDefinitions();
-      this.initializeDataSource();
-    });
+    //   this.currentSectorData = this.investmentSectors!.find(
+    //     (s) => s.key === this.selectedSector,
+    //   );
+    //   this.setupColumnDefinitions();
+    //   this.initializeDataSource();
+    // });
 
     // Setup color scheme
     this.colorScheme
@@ -160,98 +214,69 @@ export class IndexComponent implements OnInit, OnDestroy {
     const baseColumns: ColDef<any>[] = [
       { headerName: 'S/N', width: 75, valueGetter: 'node.rowIndex + 1' },
       {
-        field: 'Period',
+        field: 'period',
+        headerName: 'Period',
         sortable: false,
       },
       {
-        field: 'Data Rating',
+        field: 'data_rating',
+        headerName: 'Data Rating',
       },
       {
-        field: 'Property Code',
+        field: 'property_code',
+        headerName: 'Property Code',
       },
       {
-        field: 'Region',
+        field: 'region',
+        headerName: 'Region',
       },
       {
-        field: "Locality"
+        field: 'locality',
+        headerName: 'Locality',
       },
       {
-        field: "Section",
+        field: 'section',
+        headerName: 'Section',
       },
       {
-        field: "LGA",
-      }, {
-        field: "LCDA",
+        field: 'lga',
+        headerName: 'L.G.A',
       },
       {
-        field: "Street"
+        field: 'lcda',
+        headerName: 'L.C.D.A',
       },
       {
-        field: "Street Number",
+        field: 'street',
+        headerName: 'Street',
       },
       {
-        field: "Development"
+        field: 'street_number',
+        headerName: 'Street Number',
       },
       {
-        field: "Sector"
+        field: 'development',
+        headerName: 'Development',
       },
       {
-        field: "Building Type"
+        field: 'sector',
+        headerName: 'Sector',
       },
-      {
-        field: "Sub Type"
-      },
-      {
-        field: "Classification"
-      },
-      {
-        field: "Unit Type"
-      },
-      {
-        field: "Size"
-      },
-      {
-        field: "Construction Status"
-      },
-      {
-        field: "Year of Completion"
-      },
-      {
-        field: "Property Type",
-        headerName: "Property Type",
-        filter: false
-      },
-      {
-        field: "Status",
-        headerName: "Status",
-        filter: false
-      },
-      {
-        field: "Completion Year",
-        headerName: "Completion Year",
-        filter: false
-      },
-      {
-        field: "Period",
-        headerName: "Period",
-        filter: false
-      },
-      {
-        field: "L.G.A",
-        headerName: "L. G. A",
-        filter: false
-      },
-      {
-        field: "L.C.D.A",
-        headerName: "L. C. D. A",
-        filter: false
-      },
-      {
-        field: "Street Name",
-        filter: false
-      },
-    ];
 
+      {
+        field: 'sub_type',
+        headerName: 'Sub Type',
+      },
+      {
+        field: 'classification',
+        headerName: 'Classification',
+      },
+      // {
+      //   field: 'property_type',
+      //   headerName: 'Property Type',
+      //   filter: false,
+      // },
+    ];
 
     // Sector-specific columns
     const sectorSpecificColumns = this.getSectorSpecificColumns();
@@ -259,165 +284,167 @@ export class IndexComponent implements OnInit, OnDestroy {
     // Common trailing columns
     const trailingColumns: ColDef<any>[] = [
       {
-        field: "Updated By",
+        field: 'Updated By',
         hide: this.permission.isAdhocStaff,
       },
     ];
 
-    this.colDefs = [...baseColumns, ...sectorSpecificColumns, ...trailingColumns];
+    this.colDefs = [
+      ...baseColumns,
+      ...sectorSpecificColumns,
+      ...trailingColumns,
+    ];
   }
 
-
   getSectorSpecificColumns(): ColDef<any>[] {
-    switch (this.selectedSector) {
+    switch (this.selectedSectorName) {
       case 'residential':
         return [
-          { field: "Building Type", },
-          { field: "No of Units" },
-          { field: "No of Beds" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price", cellClass: 'text-right' },
-          { field: "Sale Price", cellClass: 'text-right' },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Annual Service Charge" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
+          {
+            field: 'building_type',
+            headerName: 'Building Type',
+          },
+          { field: 'size', headerName: 'No of Units' },
+          { field: 'unit_type', headerName: 'No of Beds' },
+          { field: 'construction_status', headerName: 'Status' },
+          { field: 'year_of_completion', headerName: 'Completion Year' },
+          {
+            field: 'lease_price',
+            headerName: 'Rental Price',
+            cellClass: 'text-right',
+          },
+          {
+            field: 'sales_price',
+            headerName: 'Sale Price',
+            cellClass: 'text-right',
+          },
+          { field: 'developer', headerName: 'Developer' },
+          { field: 'contractor', headerName: 'Contractor' },
+          { field: 'facility_manager', headerName: 'Facility Manager' },
+          { field: 'service_charge', headerName: 'Annual Service Charge' },
         ];
 
       case 'land':
         return [
-          { field: "Land Area", cellClass: "text-center", headerClass: "text-center" },
-          { field: "Status" },
-          { field: "Period" },
-          { field: "Rental Price", cellClass: 'text-right' },
-          { field: "Sale Price", cellClass: 'text-right' },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
+          {
+            field: 'Land Area',
+            cellClass: 'text-center',
+            headerClass: 'text-center',
+          },
+          { field: 'Status' },
+          { field: 'Rental Price', cellClass: 'text-right' },
+          { field: 'Sale Price', cellClass: 'text-right' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       case 'healthcare':
         return [
-          { field: "Classification", },
-          { field: "No of Beds" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Operator", cellClass: 'text-right' },
-          { field: "Contractor" },
-          { field: "Developer" },
-          { field: "Facilities Manager" },
+          { field: 'Classification' },
+          { field: 'No of Beds' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Operator', cellClass: 'text-right' },
+          { field: 'Contractor' },
+          { field: 'Developer' },
+          { field: 'Facilities Manager' },
         ];
 
       case 'retail':
         return [
-          { field: "Classification", },
-          { field: "NLFA" },
-          { field: "No of Floors" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price", cellClass: 'text-right' },
-          { field: "Sale Price", cellClass: 'text-right' },
-          { field: "Annual Service Charge" },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
-
-
+          { field: 'Classification' },
+          { field: 'NLFA' },
+          { field: 'No of Floors' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Rental Price', cellClass: 'text-right' },
+          { field: 'Sale Price', cellClass: 'text-right' },
+          { field: 'Annual Service Charge' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       case 'hotel':
         return [
-          { field: "Classification", },
-          { field: "Number of Keys", },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Sale Price", cellClass: 'text-right' },
-          { field: "Daily Rate", cellClass: 'text-right' },
-          { field: "Room Type", cellClass: 'text-right' },
-          { field: "Operator" },
-          { field: "Contractor" },
-          { field: "Developer" },
+          { field: 'Classification' },
+          { field: 'Number of Keys' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Sale Price', cellClass: 'text-right' },
+          { field: 'Daily Rate', cellClass: 'text-right' },
+          { field: 'Room Type', cellClass: 'text-right' },
+          { field: 'Operator' },
+          { field: 'Contractor' },
+          { field: 'Developer' },
         ];
 
       case 'office':
         return [
-          { field: "Classification", },
-          { field: "NLFA" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price", cellClass: 'text-right' },
-          { field: "Sale Price", cellClass: 'text-right' },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Annual Service Charge" },
-          { field: "No of Floors" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
+          { field: 'Classification' },
+          { field: 'NLFA' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Rental Price', cellClass: 'text-right' },
+          { field: 'Sale Price', cellClass: 'text-right' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Annual Service Charge' },
+          { field: 'No of Floors' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       case 'industrial':
         return [
-          { field: "Classification", },
-          { field: "Building Type", },
-          { field: "No of Bay", },
-          { field: "NLFA" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price", cellClass: 'text-right' },
-          { field: "Sale Price", cellClass: 'text-right' },
-          { field: "Annual Service Charge" },
-          { field: "Facilities Manager" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
-          { field: "Developer" },
-          { field: "Contractor" },
+          { field: 'Classification' },
+          { field: 'Building Type' },
+          { field: 'No of Bay' },
+          { field: 'NLFA' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Rental Price', cellClass: 'text-right' },
+          { field: 'Sale Price', cellClass: 'text-right' },
+          { field: 'Annual Service Charge' },
+          { field: 'Facilities Manager' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
         ];
 
       case 'street':
         return [
-          { field: "Sector", },
-          { field: "No of Plots" },
-          { field: "No of Streets" },
+          { field: 'Sector' },
+          { field: 'No of Plots' },
+          { field: 'No of Streets' },
         ];
 
       case 'events':
         return [
-          { field: "Classification", },
-          { field: "No of Seats", },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Daily Rates", cellClass: 'text-right' },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
+          { field: 'Classification' },
+          { field: 'No of Seats' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Daily Rates', cellClass: 'text-right' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       default:
-        return [
-
-        ];
+        return [];
     }
   }
-
 
   initializeDataSource() {
     // Clear cache when sector changes
     this.dataCache.clear();
-
 
     if (this.useDummyData) {
       // Use dummy data
@@ -429,36 +456,37 @@ export class IndexComponent implements OnInit, OnDestroy {
     // Get initial total count
     const paginatedParams: PaginatedInvestmentParams = {
       limit: 1,
-      sector: this.selectedSector
+      sectorId: this.selectedSectorId,
     };
 
     if (!this.permission.isAdmin) {
       paginatedParams.updatedById = this.currentUser.id?.toString() ?? null;
     }
 
-    this.investmentDataService.apiGetPaginatedInvestmentData(paginatedParams)
+    this.investmentDataService
+      .apiGetPaginatedInvestmentData(paginatedParams)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(v => {
+      .subscribe((v) => {
         this.totalRecords = v.totalPages.toString();
       });
-
-
   }
 
   private initializeRealDataSource() {
+    console.log(this.selectedSectorId);
     // Your existing API-based initialization code
     const paginatedParams: PaginatedInvestmentParams = {
       limit: 1,
-      sector: this.selectedSector
+      sectorId: this.selectedSectorId,
     };
 
     if (!this.permission.isAdmin) {
       paginatedParams.updatedById = this.currentUser.id?.toString() ?? null;
     }
 
-    this.investmentDataService.apiGetPaginatedInvestmentData(paginatedParams)
+    this.investmentDataService
+      .apiGetPaginatedInvestmentData(paginatedParams)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(v => {
+      .subscribe((v) => {
         this.totalRecords = v.totalPages.toString();
       });
 
@@ -469,12 +497,12 @@ export class IndexComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
 
         const startRow = params.startRow;
-        const currentPage = (Math.floor(startRow / this.pageSize) + 1);
+        const currentPage = Math.floor(startRow / this.pageSize) + 1;
 
         const paginatedParams: PaginatedInvestmentParams = {
           limit: this.pageSize,
           currentPage,
-          sector: this.selectedSector
+          sectorId: this.selectedSectorId,
         };
 
         if (Object.keys(params.filterModel).length > 0) {
@@ -496,21 +524,26 @@ export class IndexComponent implements OnInit, OnDestroy {
         if (cachedData) {
           // For real data, we assume the API already handles filtering
           // so we pass the actual data length as total records
-          const totalRecords = Object.keys(params.filterModel).length > 0 ?
-            cachedData.data.length : cachedData.totalRecords;
+          const totalRecords =
+            Object.keys(params.filterModel).length > 0
+              ? cachedData.data.length
+              : cachedData.totalRecords;
 
           params.successCallback(cachedData.data, totalRecords);
           this.isLoading = false;
           this.cdr.detectChanges();
         } else {
-          this.investmentDataService.apiGetPaginatedInvestmentData(paginatedParams)
+          this.investmentDataService
+            .apiGetPaginatedInvestmentData(paginatedParams)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
               next: (value) => {
                 // For real data, we assume the API already handles filtering
                 // so we pass the actual data length as total records when filtered
-                const totalRecords = Object.keys(params.filterModel).length > 0 ?
-                  value.data.length : value.totalRecords;
+                const totalRecords =
+                  Object.keys(params.filterModel).length > 0
+                    ? value.data.length
+                    : value.totalRecords;
 
                 params.successCallback(value.data, totalRecords);
 
@@ -527,19 +560,19 @@ export class IndexComponent implements OnInit, OnDestroy {
                 params.failCallback();
                 this.isLoading = false;
                 this.cdr.detectChanges();
-              }
+              },
             });
         }
-      }
+      },
     };
   }
 
-
   private initializeDummyDataSource() {
     // Get initial total count from dummy data
-    this.dummyDataService.getPaginatedDummyData(this.selectedSector, { limit: 1 })
+    this.dummyDataService
+      .getPaginatedDummyData(this.selectedSectorName, { limit: 1 })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(v => {
+      .subscribe((v) => {
         this.totalRecords = v.totalRecords.toString();
       });
 
@@ -550,17 +583,18 @@ export class IndexComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
 
         const startRow = params.startRow;
-        const currentPage = (Math.floor(startRow / this.pageSize) + 1);
+        const currentPage = Math.floor(startRow / this.pageSize) + 1;
 
         const paginatedParams = {
           limit: this.pageSize,
           currentPage,
-          sector: this.selectedSector,
+          sector_id: this.selectedSectorId,
           filterModel: params.filterModel,
-          sortModel: params.sortModel
+          sortModel: params.sortModel,
         };
 
-        this.dummyDataService.getPaginatedDummyData(this.selectedSector, paginatedParams)
+        this.dummyDataService
+          .getPaginatedDummyData(this.selectedSectorName, paginatedParams)
           .pipe(takeUntil(this.destroy$))
           .subscribe({
             next: (value) => {
@@ -569,7 +603,10 @@ export class IndexComponent implements OnInit, OnDestroy {
 
               // Apply client-side filtering first
               if (Object.keys(params.filterModel).length > 0) {
-                filteredData = this.applyFiltering(filteredData, params.filterModel);
+                filteredData = this.applyFiltering(
+                  filteredData,
+                  params.filterModel,
+                );
                 // Update total count to match filtered results
                 totalFilteredRecords = filteredData.length;
               }
@@ -596,14 +633,11 @@ export class IndexComponent implements OnInit, OnDestroy {
               params.failCallback();
               this.isLoading = false;
               this.cdr.detectChanges();
-            }
+            },
           });
-      }
+      },
     };
   }
-
-
-
 
   // Helper methods for client-side filtering and sorting
   private applySorting(data: any[], sortModel: any): any[] {
@@ -620,8 +654,8 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   private applyFiltering(data: any[], filterModel: any): any[] {
-    return data.filter(item => {
-      return Object.keys(filterModel).every(field => {
+    return data.filter((item) => {
+      return Object.keys(filterModel).every((field) => {
         const filter = filterModel[field];
         const value = item[field];
 
@@ -629,7 +663,10 @@ export class IndexComponent implements OnInit, OnDestroy {
 
         // Simple contains filter
         if (filter.type === 'contains') {
-          return value.toString().toLowerCase().includes(filter.filter.toLowerCase());
+          return value
+            .toString()
+            .toLowerCase()
+            .includes(filter.filter.toLowerCase());
         }
 
         // Add more filter types as needed
@@ -644,21 +681,36 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.initializeDataSource();
   }
 
+  async onSectorChange(sectorId: number): Promise<void> {
+    const sectors = await firstValueFrom(this.investmentSectors$);
 
-  onSectorChange(sector: string) {
-    const selectedSectorData = this.investmentSectors.find(s => s.key === sector);
-    if (selectedSectorData) {
-      // Navigate to the new sector route
-      this.angularRouter.navigate(['/dashboard/investment-data', sector]);
+    const selectedSector = sectors.find((s) => s.key == sectorId);
+
+    if (!selectedSector) {
+      return;
     }
+
+    this.selectedSectorName = selectedSector.label.toLowerCase();
+
+    await this.angularRouter.navigate([
+      '/dashboard/investment-data',
+      this.selectedSectorName,
+    ]);
   }
 
   onRowClicked(ev: any) {
     const data = ev.data;
-    this.router.navigateByUrl(`/dashboard/investment-data/${this.selectedSector}/${data["property ID"]}`, data);
+    this.router.navigateByUrl(
+      `/dashboard/investment-data/${this.selectedSectorName}/${data['property_id']}`,
+      data,
+    );
   }
 
-  cacheData(paginatedParams: PaginatedInvestmentParams, data: any, totalRecords: number) {
+  cacheData(
+    paginatedParams: PaginatedInvestmentParams,
+    data: any,
+    totalRecords: number,
+  ) {
     this.dataCache.set(JSON.stringify(paginatedParams), { data, totalRecords });
   }
 
@@ -676,7 +728,7 @@ export class IndexComponent implements OnInit, OnDestroy {
 interface PaginatedInvestmentParams {
   limit: number;
   currentPage?: number;
-  sector: string;
+  sectorId: number;
   updatedById?: string;
   agFilterModel?: any;
   sortBy?: string;

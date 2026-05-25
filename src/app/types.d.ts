@@ -110,22 +110,22 @@ type SearchedStreetDataType = {
   imagePath: string;
 };
 
-type Nullable<T> = T | null
+type Nullable<T> = T | null;
 
 type PaginatedListingsParams = {
-  limit?: number,
-  currentPage?: number,
-  updatedById?: number,
-  sortBy?: string,
-  agFilterModel?: any,
-}
+  limit?: number;
+  currentPage?: number;
+  updatedById?: number;
+  sortBy?: string;
+  agFilterModel?: any;
+};
 
 // Property Data
 type PaginationMetaDataResponse = {
-  totalPages: number,
-  limit: number,
-  totalRecords: number,
-  currentPage: number,
-  nextPage: number,
-  prevPage: number,
-}
+  totalPages: number;
+  limit: number;
+  totalRecords: number;
+  currentPage: number;
+  nextPage: number;
+  prevPage: number;
+};

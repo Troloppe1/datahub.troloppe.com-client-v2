@@ -2,23 +2,33 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TextButtonComponent } from '@core/components/dashboard/text-btn/text-btn.component';
-import { Amenity, DummyInvestmentData } from '@core/services/dashboard/dummy-investment-data.service';
+import {
+  Amenity,
+  DummyInvestmentData,
+} from '@core/services/dashboard/dummy-investment-data.service';
 import { RouterService } from '@core/services/router.service';
 import { LoaderService } from '@shared/services/loader.service';
-import { Subject, takeUntil } from 'rxjs';
-import { BackBtnComponent } from "@shared/components/back-btn/back-btn.component";
-import { SpinnerComponent } from "@shared/components/spinner/spinner.component";
+import { firstValueFrom, Subject, takeUntil } from 'rxjs';
+import { BackBtnComponent } from '@shared/components/back-btn/back-btn.component';
+import { SpinnerComponent } from '@shared/components/spinner/spinner.component';
 import { PermissionService } from '@shared/services/permission.service';
 import { InvestmentDataService } from '@core/services/dashboard/investment-data.service';
 import { CommonModule } from '@angular/common';
-import { RecordNavigatorComponent } from "@shared/components/record-navigator/record-navigator.component";
+import { RecordNavigatorComponent } from '@shared/components/record-navigator/record-navigator.component';
+import { UtilsService } from '@shared/services/utils.service';
 
 @Component({
   selector: 'app-investment-view',
   standalone: true,
-  imports: [TextButtonComponent, BackBtnComponent, SpinnerComponent, CommonModule, RecordNavigatorComponent],
+  imports: [
+    TextButtonComponent,
+    BackBtnComponent,
+    SpinnerComponent,
+    CommonModule,
+    RecordNavigatorComponent,
+  ],
   templateUrl: 'view.component.html',
-  styleUrl: 'view.component.scss'
+  styleUrl: 'view.component.scss',
 })
 export class ViewComponent implements OnInit, OnDestroy {
   public Object = Object;
@@ -40,8 +50,9 @@ export class ViewComponent implements OnInit, OnDestroy {
     private readonly angularRouter: Router,
     private readonly investmentDataService: InvestmentDataService,
     private readonly loaderService: LoaderService,
-    public readonly permissionService: PermissionService
-  ) { }
+    private readonly utilsService: UtilsService,
+    public readonly permissionService: PermissionService,
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -53,20 +64,22 @@ export class ViewComponent implements OnInit, OnDestroy {
       this.investmentData = storedData;
     }
 
-
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       this.fetchInvestmentData(+params.get('investmentDataId')!);
-      this.fetchAmenities(this.investmentData?.id ?? +params.get('investmentDataId')!);
-    })
+      this.fetchAmenities(
+        this.investmentData?.id ?? +params.get('investmentDataId')!,
+      );
+    });
   }
-
 
   // Get filtered keys for display (exclude certain fields)
   get investmentDataKeys(): string[] {
     if (!this.investmentData) return [];
 
     const excludedKeys = ['id', 'Updated By']; // Add more keys to exclude if needed
-    return Object.keys(this.investmentData).filter(key => !excludedKeys.includes(key));
+    return Object.keys(this.investmentData).filter(
+      (key) => !excludedKeys.includes(key),
+    );
   }
 
   // Get grouped data for better organization
@@ -80,13 +93,40 @@ export class ViewComponent implements OnInit, OnDestroy {
     const contactInfo: { [key: string]: any } = {};
     const otherInfo: { [key: string]: any } = {};
 
-    const locationKeys = ['State', 'Region', 'Locality', 'Section', 'L.G.A', 'L.C.D.A', 'Street Name'];
-    const propertyKeys = ['Building Type', 'Classification', 'No of Units', 'No of Beds', 'No of Floors', 'Land Area', 'NLFA', 'Number of Keys', 'No of Seats', 'No of Bay', 'No of Plots', 'No of Streets'];
-    const financialKeys = ['Rental Price', 'Sale Price', 'Daily Rate', 'Daily Rates', 'Annual Service Charge'];
+    const locationKeys = [
+      'State',
+      'Region',
+      'Locality',
+      'Section',
+      'L.G.A',
+      'L.C.D.A',
+      'Street Name',
+    ];
+    const propertyKeys = [
+      'Building Type',
+      'Classification',
+      'No of Units',
+      'No of Beds',
+      'No of Floors',
+      'Land Area',
+      'NLFA',
+      'Number of Keys',
+      'No of Seats',
+      'No of Bay',
+      'No of Plots',
+      'No of Streets',
+    ];
+    const financialKeys = [
+      'Rental Price',
+      'Sale Price',
+      'Daily Rate',
+      'Daily Rates',
+      'Annual Service Charge',
+    ];
     const contactKeys = ['Contact Name', 'Contact Number'];
     const basicKeys = ['Date', 'Status', 'Completion Year', 'Period'];
 
-    Object.keys(this.investmentData).forEach(key => {
+    Object.keys(this.investmentData).forEach((key) => {
       if (key === 'id' || key === 'Updated By') return;
 
       const value = this.investmentData![key];
@@ -109,11 +149,16 @@ export class ViewComponent implements OnInit, OnDestroy {
     const result: { [category: string]: { [key: string]: any } } = {};
 
     if (Object.keys(basicInfo).length) result['Basic Information'] = basicInfo;
-    if (Object.keys(locationInfo).length) result['Location Details'] = locationInfo;
-    if (Object.keys(propertyDetails).length) result['Property Details'] = propertyDetails;
-    if (Object.keys(financialInfo).length) result['Financial Information'] = financialInfo;
-    if (Object.keys(contactInfo).length) result['Contact Information'] = contactInfo;
-    if (Object.keys(otherInfo).length) result['Additional Information'] = otherInfo;
+    if (Object.keys(locationInfo).length)
+      result['Location Details'] = locationInfo;
+    if (Object.keys(propertyDetails).length)
+      result['Property Details'] = propertyDetails;
+    if (Object.keys(financialInfo).length)
+      result['Financial Information'] = financialInfo;
+    if (Object.keys(contactInfo).length)
+      result['Contact Information'] = contactInfo;
+    if (Object.keys(otherInfo).length)
+      result['Additional Information'] = otherInfo;
 
     return result;
   }
@@ -123,8 +168,10 @@ export class ViewComponent implements OnInit, OnDestroy {
   }
 
   goToEditInvestmentData(): void {
-    const id = this.investmentData?.["property ID"];
-    this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}/${id}/edit`);
+    const id = this.investmentData?.['property ID'];
+    this.router.navigateByUrl(
+      `/dashboard/investment-data/${this.sector}/${id}/edit`,
+    );
   }
 
   deleteInvestmentData(): void {
@@ -135,13 +182,17 @@ export class ViewComponent implements OnInit, OnDestroy {
 
   onPrev(previousRecordId: number): void {
     if (previousRecordId) {
-      this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}/${previousRecordId}`);
+      this.router.navigateByUrl(
+        `/dashboard/investment-data/${this.sector}/${previousRecordId}`,
+      );
     }
   }
 
   onNext(nextRecordId: number): void {
     if (nextRecordId) {
-      this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}/${nextRecordId}`);
+      this.router.navigateByUrl(
+        `/dashboard/investment-data/${this.sector}/${nextRecordId}`,
+      );
     }
   }
 
@@ -154,57 +205,68 @@ export class ViewComponent implements OnInit, OnDestroy {
         return 'Local Council Development Area';
       case 'NLFA':
         return 'Net Lettable Floor Area';
-      case "property ID":
-        return "Property ID";
-      case "Construction_Company":
-        return "Construction Company";
+      case 'property_id':
+        return 'Property ID';
+      case 'Construction_Company':
+        return 'Construction Company';
       default:
         // Convert camelCase or PascalCase to readable format
-        return key.replace(/([A-Z])/g, ' $1').trim();
+        return this.utilsService.capitalize(key);
     }
   }
 
-  private fetchInvestmentData(id: number): void {
+  private async fetchInvestmentData(id: number): Promise<void> {
     this.loaderService.start();
     this.loadingProperty = true;
 
-    this.investmentDataService.apiGetInvestmentDataById(id, true, this.sector)
+    const sectors = await firstValueFrom(
+      this.investmentDataService.getSectors(),
+    );
+
+    const selectedSector = sectors.find(
+      (sector) => sector.label.toLowerCase() === this.sector.toLowerCase(),
+    );
+
+    this.investmentDataService
+      .apiGetInvestmentDataById(id, true, selectedSector?.key)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-
           this.investmentData = response.data.property;
           this.previousRecordId = response.data.meta.previous_property_id;
           this.nextRecordId = response.data.meta.next_property_id;
           this.fetchedData = true;
           this.loadingProperty = false;
           if (!this.investmentData) {
-            this.router.navigateByUrl('/not-found', { skipLocationChange: true });
+            this.router.navigateByUrl('/not-found', {
+              skipLocationChange: true,
+            });
           }
           this.loaderService.stop();
         },
         error: (err) => {
           if (err.status === 404) {
-            this.angularRouter.navigateByUrl('/not-found', { skipLocationChange: true });
+            this.angularRouter.navigateByUrl('/not-found', {
+              skipLocationChange: true,
+            });
           }
           this.loaderService.stop();
         },
-        complete: () => {
-
-        }
+        complete: () => {},
       });
   }
 
   private fetchAmenities(propertyId: number): void {
     this.loadingAmenities = true;
-    this.investmentDataService.apiGetInvestmentDataAmenitiesById(propertyId)
+    this.investmentDataService
+      .apiGetInvestmentDataAmenitiesById(propertyId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           this.amenities = response.data;
           this.loadingAmenities = false;
-        }
-      })
+        },
+      });
   }
 
   ngOnDestroy(): void {

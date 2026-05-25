@@ -5,7 +5,15 @@ import { apiUrlFactory } from '@configs/global';
 import { CacheService } from '@shared/services/cache.service';
 import { FormSubmissionService } from '@shared/services/form-submission.service';
 import { LoaderService } from '@shared/services/loader.service';
-import { Observable, of, Subject, takeUntil, tap } from 'rxjs';
+import {
+  map,
+  Observable,
+  of,
+  shareReplay,
+  Subject,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { ModalService } from './modal.service';
 import { ConfirmModalComponent } from '@core/components/dashboard/modals/confirm-modal/confirm-modal.component';
 import { AuthService } from '@shared/services/auth.service';
@@ -16,7 +24,7 @@ export interface PaginatedInvestmentParams {
   table?: string;
   limit?: number;
   currentPage?: number;
-  sector?: string;
+  sectorId?: number;
   updatedById?: string | null;
   agFilterModel?: any;
   sortBy?: string;
@@ -31,23 +39,30 @@ export interface InvestmentDataResponse {
   hasPreviousPage: boolean;
 }
 
+export interface InvestmentSector {
+  key: number;
+  label: string;
+  route: string;
+}
+
 type OverviewWidgetType = {
   total_investment_data: number;
   total_sectors_covered: number;
   total_regions_covered: number;
   total_active_investments: number;
-}
+};
 
 type CreationType = 'create' | 'createAnother';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InvestmentDataService implements OnDestroy {
   dropdownSelectedData: Record<string, IdAndNameType> = {};
 
   private formGroup!: FormGroup;
   private destroy$ = new Subject<void>();
+  private sectors$?: Observable<InvestmentSector[]>;
 
   constructor(
     private readonly httpClient: HttpClient,
@@ -118,9 +133,7 @@ export class InvestmentDataService implements OnDestroy {
 
       // Events
       noOfSeats: [''],
-      dailyRates: ['']
-
-
+      dailyRates: [''],
     });
   }
 
@@ -175,7 +188,7 @@ export class InvestmentDataService implements OnDestroy {
         built_area: 'builtArea',
         power_supply: 'powerSupply',
         lease_rate: 'leaseRate',
-        zoning_compliance: 'zoningCompliance'
+        zoning_compliance: 'zoningCompliance',
       };
 
       for (let key in data) {
@@ -188,30 +201,25 @@ export class InvestmentDataService implements OnDestroy {
 
   apiGetPaginatedInvestmentData(
     params: Nullable<PaginatedInvestmentParams> = null,
-    invalidateCache = false
+    invalidateCache = false,
   ): Observable<InvestmentDataResponse> {
     const {
-      table = 'residential',
       limit = 200,
       currentPage = 1,
-      sector = 'residential',
+      sectorId = 1,
       updatedById = null,
       agFilterModel,
-      sortBy
+      sortBy,
     } = params || {};
 
-    let url = apiUrlFactory(
-      '/investment-data/listings',
-      {
-        table,
-        limit: limit.toString(),
-        page: currentPage.toString(),
-        sector: sector,
-        updated_by_id: updatedById?.toString(),
-        ag_filter_model: JSON.stringify(agFilterModel),
-        sort_by: sortBy
-      }
-    );
+    let url = apiUrlFactory('/investment-data/listings', {
+      limit: limit.toString(),
+      page: currentPage.toString(),
+      sector_id: sectorId,
+      updated_by_id: updatedById?.toString(),
+      ag_filter_model: JSON.stringify(agFilterModel),
+      sort_by: sortBy,
+    });
 
     if (!invalidateCache) {
       const cachedData = this.cacheService.get<InvestmentDataResponse>(url);
@@ -223,33 +231,60 @@ export class InvestmentDataService implements OnDestroy {
     return this.httpClient.get<InvestmentDataResponse>(url).pipe(
       tap((value) => {
         this.cacheService.set(url, value);
-      })
+      }),
     );
   }
 
   apiStoreInvestmentData(data: any) {
     let url = apiUrlFactory('/investment-data/listings');
-    return this.httpClient.post<{ success: boolean, message: string, data: any }>(url, data);
+    return this.httpClient.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(url, data);
   }
 
   apiUpdateInvestmentData(data: any, id: number) {
     let url = apiUrlFactory(`/investment-data/listings/${id}`);
-    return this.httpClient.put<{ success: boolean, message: string, data: any }>(url, data);
+    return this.httpClient.put<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(url, data);
   }
 
-  apiGetInvestmentDataById(id: number, view = true, sector: string = 'residential') {
-    let url = apiUrlFactory(`/investment-data/listings/${id}`, { view, sector });
-    return this.httpClient.get<{ success: boolean, message: string, data: { property: any, meta: {previous_property_id: number | null, next_property_id: number | null } }}>(url);
+  apiGetInvestmentDataById(id: number, view = true, sectorId: number = 1) {
+    let url = apiUrlFactory(`/investment-data/listings/${id}`, {
+      view,
+      sector_id: sectorId,
+    });
+    return this.httpClient.get<{
+      success: boolean;
+      message: string;
+      data: {
+        property: any;
+        meta: {
+          previous_property_id: number | null;
+          next_property_id: number | null;
+        };
+      };
+    }>(url);
   }
 
   apiGetInvestmentDataAmenitiesById(propertyId: number) {
-    let url = apiUrlFactory(`/investment-data/listings/${propertyId}/amenities`);
-    return this.httpClient.get<{ success: boolean, message: string, data: any }>(url);
+    let url = apiUrlFactory(
+      `/investment-data/listings/${propertyId}/amenities`,
+    );
+    return this.httpClient.get<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(url);
   }
 
   apiDeleteInvestmentDataById(id: number) {
     let url = apiUrlFactory(`/investment-data/listings/${id}`);
-    return this.httpClient.delete<{ success: boolean, message: string }>(url);
+    return this.httpClient.delete<{ success: boolean; message: string }>(url);
   }
 
   apiGetOverviewWidgetSet() {
@@ -270,17 +305,39 @@ export class InvestmentDataService implements OnDestroy {
   apiExportInvestmentData(sector: string, filters?: any) {
     let url = apiUrlFactory(`/investment-data/export`, {
       sector,
-      filters: JSON.stringify(filters)
+      filters: JSON.stringify(filters),
     });
     return this.httpClient.get(url, { responseType: 'blob' });
   }
 
+  getSectors(): Observable<InvestmentSector[]> {
+    if (!this.sectors$) {
+      const url = apiUrlFactory('/investment-data/sectors');
+
+      this.sectors$ = this.httpClient
+        .get<{ data: InvestmentSector[] }>(url)
+        .pipe(
+          map((response) => response.data),
+          shareReplay({
+            bufferSize: 1,
+            refCount: true,
+          }),
+        );
+    }
+
+    return this.sectors$;
+  }
+
   createInvestmentData(creationType: CreationType) {
-    this.mutateInvestmentData(creationType, (mappedData) => this.apiStoreInvestmentData(mappedData));
+    this.mutateInvestmentData(creationType, (mappedData) =>
+      this.apiStoreInvestmentData(mappedData),
+    );
   }
 
   updateInvestmentData(id: number) {
-    this.mutateInvestmentData("edit", (mappedData) => this.apiUpdateInvestmentData(mappedData, id));
+    this.mutateInvestmentData('edit', (mappedData) =>
+      this.apiUpdateInvestmentData(mappedData, id),
+    );
   }
 
   deleteInvestmentData(id: number) {
@@ -292,14 +349,21 @@ export class InvestmentDataService implements OnDestroy {
         this.loaderService.start();
         this.apiDeleteInvestmentDataById(id).subscribe({
           next: (v) => {
-            this.alertService.success('Success', 'Investment data deleted successfully.');
+            this.alertService.success(
+              'Success',
+              'Investment data deleted successfully.',
+            );
             this.cacheService.clear();
             this.loaderService.stop();
             this.router.navigateByUrl(`/dashboard/investment-data`);
           },
           error: (error) => {
             if (error.status === 403) {
-              this.alertService.error('Error', error.error.message || 'You do not have permission to delete this investment data.');
+              this.alertService.error(
+                'Error',
+                error.error.message ||
+                  'You do not have permission to delete this investment data.',
+              );
             } else {
               this.alertService.error('Error', error.message);
             }
@@ -310,14 +374,17 @@ export class InvestmentDataService implements OnDestroy {
     });
   }
 
-  private prepareSubmissionData(data: any, action: CreationType | 'edit' = 'create') {
+  private prepareSubmissionData(
+    data: any,
+    action: CreationType | 'edit' = 'create',
+  ) {
     const mappedData: Record<string, any> = {
       sector: data['sector'],
       region_id: parseInt(data['region']),
       locality_id: parseInt(data['location']),
       date: data['date'],
       comment: data['comment'],
-      source: data['source']
+      source: data['source'],
     };
 
     // Add sector-specific fields based on the selected sector
@@ -339,7 +406,7 @@ export class InvestmentDataService implements OnDestroy {
           service_charge: data['serviceCharge'],
           developer: data['developer'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
 
@@ -355,7 +422,7 @@ export class InvestmentDataService implements OnDestroy {
           zoning: data['zoning'],
           accessibility: data['accessibility'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
 
@@ -371,7 +438,7 @@ export class InvestmentDataService implements OnDestroy {
           investment_required: data['investmentRequired'],
           roi_projection: data['roiProjection'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
 
@@ -386,7 +453,7 @@ export class InvestmentDataService implements OnDestroy {
           parking_spaces: data['parkingSpaces'],
           lease_terms: data['leaseTerms'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
 
@@ -401,7 +468,7 @@ export class InvestmentDataService implements OnDestroy {
           facilities: data['facilities'],
           investment_value: data['investmentValue'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
 
@@ -416,7 +483,7 @@ export class InvestmentDataService implements OnDestroy {
           building_amenities: data['buildingAmenities'],
           lease_terms: data['leaseTerms'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
 
@@ -430,13 +497,13 @@ export class InvestmentDataService implements OnDestroy {
           infrastructure: data['infrastructure'],
           zoning_compliance: data['zoningCompliance'],
           contact_number: data['contactNumber'],
-          email: data['email']
+          email: data['email'],
         });
         break;
     }
 
     if (action !== 'edit') {
-      this.authService.onCurrentUser().subscribe(v => {
+      this.authService.onCurrentUser().subscribe((v) => {
         mappedData['updated_by_id'] = v?.id;
       });
     } else {
@@ -452,7 +519,7 @@ export class InvestmentDataService implements OnDestroy {
       success: boolean;
       message: string;
       data: any;
-    }>
+    }>,
   ) {
     this.formSubmissionService.onFormSubmission(this.formGroup);
     if (this.formGroup.valid) {
@@ -463,33 +530,44 @@ export class InvestmentDataService implements OnDestroy {
         severity: 'warning',
         ok: async () => {
           this.loaderService.start();
-          const mappedData = this.prepareSubmissionData(this.formGroup.value, action);
-          mutateBaseFunct(mappedData).pipe(takeUntil(this.destroy$)).subscribe({
-            next: (v) => {
-              const newRecord = v.data;
-              this.alertService.success('Success', v.message);
-              if (action === 'createAnother') {
-                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 2000);
-              } else {
-                this.router.navigateByUrl(
-                  `/dashboard/investment-data/${newRecord.sector}/${newRecord.id}`,
-                  newRecord
-                );
-              }
-              this.loaderService.stop();
-            },
-            error: (err) => {
-              console.error(err);
-              if (err.status === 403) {
-                this.alertService.error('Error', err.error.message);
-              } else {
-                this.alertService.error('Error', `An error occurred while ${action === 'create' ? 'creating new' : 'updating this'} investment data`);
-              }
-              this.loaderService.stop();
-            },
-            complete: () => { }
-          });
-        }
+          const mappedData = this.prepareSubmissionData(
+            this.formGroup.value,
+            action,
+          );
+          mutateBaseFunct(mappedData)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (v) => {
+                const newRecord = v.data;
+                this.alertService.success('Success', v.message);
+                if (action === 'createAnother') {
+                  setTimeout(
+                    () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+                    2000,
+                  );
+                } else {
+                  this.router.navigateByUrl(
+                    `/dashboard/investment-data/${newRecord.sector}/${newRecord.id}`,
+                    newRecord,
+                  );
+                }
+                this.loaderService.stop();
+              },
+              error: (err) => {
+                console.error(err);
+                if (err.status === 403) {
+                  this.alertService.error('Error', err.error.message);
+                } else {
+                  this.alertService.error(
+                    'Error',
+                    `An error occurred while ${action === 'create' ? 'creating new' : 'updating this'} investment data`,
+                  );
+                }
+                this.loaderService.stop();
+              },
+              complete: () => {},
+            });
+        },
       });
     }
   }

@@ -14,11 +14,14 @@ import { PptySearchableSelectDropdownComponent } from '@shared/components/ppty-s
 import { FormSubmitBtnComponent } from '@shared/components/form-submit-btn/form-submit-btn.component';
 import { routeFadeInOut, visibleTrigger } from '@shared/animations';
 import { CommonModule } from '@angular/common';
-import { BackBtnComponent } from "../../../../shared/components/back-btn/back-btn.component";
-import { SpinnerComponent } from "../../../../shared/components/spinner/spinner.component";
+import { BackBtnComponent } from '../../../../shared/components/back-btn/back-btn.component';
+import { SpinnerComponent } from '../../../../shared/components/spinner/spinner.component';
 import { ActivatedRoute, Router, Params } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DummyInvestmentDataService, DummyInvestmentData } from '@core/services/dashboard/dummy-investment-data.service';
+import {
+  DummyInvestmentDataService,
+  DummyInvestmentData,
+} from '@core/services/dashboard/dummy-investment-data.service';
 
 export interface InvestmentSector {
   key: string;
@@ -48,33 +51,45 @@ export interface InvestmentSector {
   },
 })
 export class InvestmentDataFormComponent {
-  @Input() action: 'create' | 'edit' = 'create'
-  @Input() data: any
+  @Input() action: 'create' | 'edit' = 'create';
+  @Input() data: any;
 
   // Investment sectors configuration
   investmentSectors: InvestmentSector[] = [
-    { key: 'residential', label: 'Residential', route: 'investment-data/residential' },
+    {
+      key: 'residential',
+      label: 'Residential',
+      route: 'investment-data/residential',
+    },
     { key: 'land', label: 'Land', route: 'investment-data/land' },
-    { key: 'healthcare', label: 'Healthcare', route: 'investment-data/healthcare' },
+    {
+      key: 'healthcare',
+      label: 'Healthcare',
+      route: 'investment-data/healthcare',
+    },
     { key: 'retail', label: 'Retail', route: 'investment-data/retail' },
     { key: 'hotel', label: 'Hotel', route: 'investment-data/hotel' },
     { key: 'street', label: 'Street', route: 'investment-data/street' },
-    { key: 'industrial', label: 'Industrial', route: 'investment-data/industrial' },
+    {
+      key: 'industrial',
+      label: 'Industrial',
+      route: 'investment-data/industrial',
+    },
     { key: 'office', label: 'Office', route: 'investment-data/office' },
-    { key: 'events', label: 'Events', route: 'investment-data/events' }
+    { key: 'events', label: 'Events', route: 'investment-data/events' },
   ];
 
   selectedSector: string = '';
   currentSectorData: InvestmentSector | undefined;
 
-  optionsRecord: Record<string, IdAndNameType[] | null> = {}
-  isFetchingRecord: Record<string, boolean> = {}
-  isLoading = false
-  creationType: CreationType = 'create'
+  optionsRecord: Record<string, IdAndNameType[] | null> = {};
+  isFetchingRecord: Record<string, boolean> = {};
+  isLoading = false;
+  creationType: CreationType = 'create';
 
   investmentDataFormGroup!: FormGroup;
 
-  private destroy$ = new Subject<void>()
+  private destroy$ = new Subject<void>();
 
   constructor(
     private initialDataService: InitialDataService,
@@ -92,36 +107,48 @@ export class InvestmentDataFormComponent {
     this.initializeSectorFromRoute();
 
     if (this.action == 'create')
-      this.investmentDataFormGroup = this.investmentDataService.getFormGroup()
+      this.investmentDataFormGroup = this.investmentDataService.getFormGroup();
   }
 
   ngOnInit(): void {
-    console.log('INVESTMENT DATA FORM COMPONENT INIT - Action:', this.action, 'Data:', this.data);
+    console.log(
+      'INVESTMENT DATA FORM COMPONENT INIT - Action:',
+      this.action,
+      'Data:',
+      this.data,
+    );
     // Subscribe to route params to listen for future changes
-    this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params: Params) => {
-      this.updateSectorFromRoute(params);
-    });
+    this.route.params
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params: Params) => {
+        this.updateSectorFromRoute(params);
+      });
 
-    this.getInitialData()
+    this.getInitialData();
     this.resourceCreationFormModalService.onResourceChanged((eventData) => {
-      this.getInitialData(eventData)
-    })
+      this.getInitialData(eventData);
+    });
     this.sds.onAddBtnClick((outerFormGroup, formControlName) => {
-      this.modalService.open(ResourceCreationFormModalComponent, { outerFormGroup, formControlName })
-    })
+      this.modalService.open(ResourceCreationFormModalComponent, {
+        outerFormGroup,
+        formControlName,
+      });
+    });
   }
-
-
 
   private initializeSectorFromRoute(): void {
     // Get sector from current route snapshot immediately
     const sectorFromUrl = this.route.snapshot.params['sector'];
 
-    if (sectorFromUrl && this.investmentSectors.some(s => s.key === sectorFromUrl)) {
+    if (
+      sectorFromUrl &&
+      this.investmentSectors.some((s) => s.key === sectorFromUrl)
+    ) {
       this.selectedSector = sectorFromUrl;
-      this.currentSectorData = this.investmentSectors.find(s => s.key === sectorFromUrl);
+      this.currentSectorData = this.investmentSectors.find(
+        (s) => s.key === sectorFromUrl,
+      );
     } else {
-
     }
   }
 
@@ -131,158 +158,156 @@ export class InvestmentDataFormComponent {
     }
 
     const sectorFields = this.getSectorFields(this.selectedSector);
-    return sectorFields.some(field => field.field === fieldName);
+    return sectorFields.some((field) => field.field === fieldName);
   }
 
   getSectorFields(sector: string) {
     switch (sector) {
       case 'residential':
         return [
-          { field: "Building Type" },
-          { field: "No of Units" },
-          { field: "No of Beds" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price" },
-          { field: "Sale Price" },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Annual Service Charge" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
-          ...(this.action === "create" ? [{ field: "Amenities" }] : [])
+          { field: 'Building Type' },
+          { field: 'No of Units' },
+          { field: 'No of Beds' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Rental Price' },
+          { field: 'Sale Price' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Annual Service Charge' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
+          ...(this.action === 'create' ? [{ field: 'Amenities' }] : []),
         ];
 
       case 'land':
         return [
-          { field: "Land Area" },
-          { field: "Status" },
-          { field: "Period" },
-          { field: "Rental Price" },
-          { field: "Sale Price" },
-          { field: "Contact Name" },
-          { field: "Contact Number" }
+          { field: 'Land Area' },
+          { field: 'Status' },
+          { field: 'Period' },
+          { field: 'Rental Price' },
+          { field: 'Sale Price' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       case 'healthcare':
         return [
-          { field: "Classification" },
-          { field: "No of Beds" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Amenities" },
-          { field: "Operator" },
-          { field: "Contractor" },
-          { field: "Developer" },
-          { field: "Facilities Manager" }
+          { field: 'Classification' },
+          { field: 'No of Beds' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Amenities' },
+          { field: 'Operator' },
+          { field: 'Contractor' },
+          { field: 'Developer' },
+          { field: 'Facilities Manager' },
         ];
 
       case 'retail':
         return [
-          { field: "Classification" },
-          { field: "NLFA" },
-          { field: "No of Floors" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price" },
-          { field: "Sale Price" },
-          { field: "Annual Service Charge" },
-          { field: "Amenities" },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Contact Name" },
-          { field: "Contact Number" }
+          { field: 'Classification' },
+          { field: 'NLFA' },
+          { field: 'No of Floors' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Rental Price' },
+          { field: 'Sale Price' },
+          { field: 'Annual Service Charge' },
+          { field: 'Amenities' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       case 'hotel':
         return [
-          { field: "Classification" },
-          { field: "Number of Keys" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Sale Price" },
-          { field: "Daily Rate" },
-          { field: "Room Type" },
-          { field: "Amenities" },
-          { field: "Operator" },
-          { field: "Contractor" },
-          { field: "Developer" }
+          { field: 'Classification' },
+          { field: 'Number of Keys' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Sale Price' },
+          { field: 'Daily Rate' },
+          { field: 'Room Type' },
+          { field: 'Amenities' },
+          { field: 'Operator' },
+          { field: 'Contractor' },
+          { field: 'Developer' },
         ];
 
       case 'office':
         return [
-          { field: "Classification" },
-          { field: "NLFA" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price" },
-          { field: "Sale Price" },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Annual Service Charge" },
-          { field: "No of Floors" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
-          ...(this.action === "create" ? [{ field: "Amenities" }] : [])
+          { field: 'Classification' },
+          { field: 'NLFA' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Rental Price' },
+          { field: 'Sale Price' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Annual Service Charge' },
+          { field: 'No of Floors' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
+          ...(this.action === 'create' ? [{ field: 'Amenities' }] : []),
         ];
 
       case 'industrial':
         return [
-          { field: "Classification" },
-          { field: "Building Type" },
-          { field: "No of Bay" },
-          { field: "NLFA" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Rental Price" },
-          { field: "Sale Price" },
-          { field: "Annual Service Charge" },
-          { field: "Amenities" },
-          { field: "Facilities Manager" },
-          { field: "Contact Name" },
-          { field: "Contact Number" },
-          { field: "Developer" },
-          { field: "Contractor" }
+          { field: 'Classification' },
+          { field: 'Building Type' },
+          { field: 'No of Bay' },
+          { field: 'NLFA' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Rental Price' },
+          { field: 'Sale Price' },
+          { field: 'Annual Service Charge' },
+          { field: 'Amenities' },
+          { field: 'Facilities Manager' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
         ];
 
       case 'street':
         return [
-          { field: "Sector" },
-          { field: "No of Plots" },
-          { field: "No of Streets" }
+          { field: 'Sector' },
+          { field: 'No of Plots' },
+          { field: 'No of Streets' },
         ];
 
       case 'events':
         return [
-          { field: "Classification" },
-          { field: "No of Seats" },
-          { field: "Status" },
-          { field: "Completion Year" },
-          { field: "Period" },
-          { field: "Daily Rates" },
-          { field: "Amenities" },
-          { field: "Developer" },
-          { field: "Contractor" },
-          { field: "Facilities Manager" },
-          { field: "Contact Name" },
-          { field: "Contact Number" }
+          { field: 'Classification' },
+          { field: 'No of Seats' },
+          { field: 'Status' },
+          { field: 'Completion Year' },
+          { field: 'Period' },
+          { field: 'Daily Rates' },
+          { field: 'Amenities' },
+          { field: 'Developer' },
+          { field: 'Contractor' },
+          { field: 'Facilities Manager' },
+          { field: 'Contact Name' },
+          { field: 'Contact Number' },
         ];
 
       default:
         return [];
     }
   }
-
-
 
   private normalizeInvestmentData(raw: DummyInvestmentData): any {
     return {
@@ -320,11 +345,13 @@ export class InvestmentDataFormComponent {
       noOfPlots: raw['No of Plots'],
       noOfStreets: raw['No of Streets'],
       noOfSeats: raw['No of Seats'],
-      dailyRates: this.unformatCurrency(raw['Daily Rates'])
+      dailyRates: this.unformatCurrency(raw['Daily Rates']),
     };
   }
 
-  private unformatCurrency(value: string | number | null | undefined): number | null {
+  private unformatCurrency(
+    value: string | number | null | undefined,
+  ): number | null {
     if (typeof value === 'number') return value;
     if (!value || typeof value !== 'string') return null;
 
@@ -334,17 +361,19 @@ export class InvestmentDataFormComponent {
     return isNaN(parsed) ? null : parsed;
   }
 
-
-
-
   private updateSectorFromRoute(params: Params): void {
     const sectorFromUrl = params['sector'];
 
-    if (sectorFromUrl && this.investmentSectors.some(s => s.key === sectorFromUrl)) {
+    if (
+      sectorFromUrl &&
+      this.investmentSectors.some((s) => s.key === sectorFromUrl)
+    ) {
       // Only update if sector actually changed
       if (this.selectedSector !== sectorFromUrl) {
         this.selectedSector = sectorFromUrl;
-        this.currentSectorData = this.investmentSectors.find(s => s.key === sectorFromUrl);
+        this.currentSectorData = this.investmentSectors.find(
+          (s) => s.key === sectorFromUrl,
+        );
 
         // Update the form if needed based on sector
         this.updateFormBasedOnSector();
@@ -362,27 +391,32 @@ export class InvestmentDataFormComponent {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.action === 'edit' && changes['data']?.currentValue) {
-      const normalized = this.normalizeInvestmentData(changes['data'].currentValue);
+      const normalized = this.normalizeInvestmentData(
+        changes['data'].currentValue,
+      );
       this.investmentDataFormGroup.patchValue(normalized);
       this.setupOptionsInEditMode(); // if needed
     }
-
   }
 
   // Handle sector change
   onInvestmentSectorChange(sectorKey: string) {
-    const selectedSectorData = this.investmentSectors.find(s => s.key === sectorKey);
+    const selectedSectorData = this.investmentSectors.find(
+      (s) => s.key === sectorKey,
+    );
     if (selectedSectorData) {
       // Update the selectedSector immediately for UI feedback
       this.selectedSector = sectorKey;
       this.currentSectorData = selectedSectorData;
 
       // Navigate to the new sector route
-      this.angularRouter.navigate([`/dashboard/investment-data/${sectorKey}/new`]);
+      this.angularRouter.navigate([
+        `/dashboard/investment-data/${sectorKey}/new`,
+      ]);
     }
   }
 
-  private getInitialData(resource?: { name: string, data: IdAndNameType }) {
+  private getInitialData(resource?: { name: string; data: IdAndNameType }) {
     const initialDataMap: Record<string, () => Observable<any>> = {
       // state: () => this.initialDataService.getAllStates(),
       sector: () => this.initialDataService.getAllSectors(),
@@ -390,16 +424,17 @@ export class InvestmentDataFormComponent {
     };
 
     if (resource) {
-      const options = this.optionsRecord[resource.name]
-      this.optionsRecord[resource.name] = options ? [resource.data, ...options] : [resource.data]
-    }
-    else {
+      const options = this.optionsRecord[resource.name];
+      this.optionsRecord[resource.name] = options
+        ? [resource.data, ...options]
+        : [resource.data];
+    } else {
       Object.entries(initialDataMap).forEach(([key, fetchData]) => {
         fetchData()
           .pipe(takeUntil(this.destroy$))
-          .subscribe(v => {
-            this.optionsRecord[key] = v
-          })
+          .subscribe((v) => {
+            this.optionsRecord[key] = v;
+          });
       });
     }
   }
@@ -408,18 +443,30 @@ export class InvestmentDataFormComponent {
     console.log('Setting up options in edit mode with data:', this.data);
     const mapper: Record<string, Observable<IdAndNameType[]>> = {
       region: this.formDataService.getRegions(),
-      location: this.formDataService.getLocationsByRegionId(this.data.property.source_data.region_id),
-      section: this.formDataService.getSectionsByLocalityId(this.data.property.source_data.locality_id),
-      lga: this.formDataService.getLgasByRegionId(this.data.property.source_data.region_id),
-      lcda: this.formDataService.getLcdasByLgaId(this.data.property.source_data.lga_id),
-      subSector: this.formDataService.getSubSectorsBySectorId(this.data.property.source_data.sector_id),
-    }
+      location: this.formDataService.getLocationsByRegionId(
+        this.data.property.source_data.region_id,
+      ),
+      section: this.formDataService.getSectionsByLocalityId(
+        this.data.property.source_data.locality_id,
+      ),
+      lga: this.formDataService.getLgasByRegionId(
+        this.data.property.source_data.region_id,
+      ),
+      lcda: this.formDataService.getLcdasByLgaId(
+        this.data.property.source_data.lga_id,
+      ),
+      subSector: this.formDataService.getSubSectorsBySectorId(
+        this.data.property.source_data.sector_id,
+      ),
+    };
 
-    forkJoin(mapper).pipe(takeUntil(this.destroy$)).subscribe((result) => {
-      for (let key in result) {
-        this.optionsRecord[key] = result[key]
-      }
-    })
+    forkJoin(mapper)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result) => {
+        for (let key in result) {
+          this.optionsRecord[key] = result[key];
+        }
+      });
   }
 
   private onFieldChange(
@@ -427,12 +474,21 @@ export class InvestmentDataFormComponent {
     selectedItem: IdAndNameType,
     fieldToChange: string,
     fetchMethod: (id: number) => Observable<IdAndNameType[]>,
-    resetFields?: string[]
+    resetFields?: string[],
   ) {
     // A curry function !!!!
-    const onChange = this.sds.onInitChangeBuilder(this.investmentDataFormGroup, this.optionsRecord, this.isFetchingRecord);
-    onChange(fieldToChange, selectedItem.id, (id) => fetchMethod(id), resetFields)
-    this.investmentDataService.dropdownSelectedData[fieldName] = selectedItem
+    const onChange = this.sds.onInitChangeBuilder(
+      this.investmentDataFormGroup,
+      this.optionsRecord,
+      this.isFetchingRecord,
+    );
+    onChange(
+      fieldToChange,
+      selectedItem.id,
+      (id) => fetchMethod(id),
+      resetFields,
+    );
+    this.investmentDataService.dropdownSelectedData[fieldName] = selectedItem;
   }
 
   // onStateChange(selectedState: IdAndNameType) {
@@ -443,14 +499,28 @@ export class InvestmentDataFormComponent {
 
   onRegionChange(selectedRegion: IdAndNameType) {
     if (selectedRegion) {
-      this.onFieldChange("region", selectedRegion, "location", (id) => this.formDataService.getLocationsByRegionId(id), ['location', 'section', 'lga'])
-      this.onFieldChange("region", selectedRegion, "lga", (regionId) => this.formDataService.getLgasByRegionId(regionId))
+      this.onFieldChange(
+        'region',
+        selectedRegion,
+        'location',
+        (id) => this.formDataService.getLocationsByRegionId(id),
+        ['location', 'section', 'lga'],
+      );
+      this.onFieldChange('region', selectedRegion, 'lga', (regionId) =>
+        this.formDataService.getLgasByRegionId(regionId),
+      );
     }
   }
 
   onLocationChange(selectedLocation: IdAndNameType) {
     if (selectedLocation) {
-      this.onFieldChange("location", selectedLocation, "section", (id) => this.formDataService.getSectionsByLocalityId(id), ['section'])
+      this.onFieldChange(
+        'location',
+        selectedLocation,
+        'section',
+        (id) => this.formDataService.getSectionsByLocalityId(id),
+        ['section'],
+      );
     }
   }
 
@@ -460,13 +530,21 @@ export class InvestmentDataFormComponent {
 
   onLgaChange(selectedLga: IdAndNameType) {
     if (selectedLga) {
-      this.onFieldChange("lga", selectedLga, "lcda", (id) => this.formDataService.getLcdasByLgaId(id), ['lcda'])
+      this.onFieldChange(
+        'lga',
+        selectedLga,
+        'lcda',
+        (id) => this.formDataService.getLcdasByLgaId(id),
+        ['lcda'],
+      );
     }
   }
 
   onSectorChange(selectedSector: IdAndNameType) {
     if (selectedSector) {
-      this.onFieldChange("sector", selectedSector, 'subSector', (id) => this.formDataService.getSubSectorsBySectorId(id))
+      this.onFieldChange('sector', selectedSector, 'subSector', (id) =>
+        this.formDataService.getSubSectorsBySectorId(id),
+      );
     }
   }
 
@@ -480,8 +558,8 @@ export class InvestmentDataFormComponent {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next()
-    this.destroy$.complete()
-    this.investmentDataFormGroup.reset()
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.investmentDataFormGroup.reset();
   }
 }

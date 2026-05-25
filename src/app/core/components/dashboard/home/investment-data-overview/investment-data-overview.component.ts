@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SpinnerComponent } from "../../../../../shared/components/spinner/spinner.component";
+import { SpinnerComponent } from '../../../../../shared/components/spinner/spinner.component';
 import { OverviewComponent } from '../overview/overview.component';
 import { ChartComponent } from '../chart/chart.component';
 import { ChartContainerComponent } from '../chart-container/chart-container.component';
@@ -12,13 +12,20 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'dashboard-investment-data-overview',
   standalone: true,
-  imports: [CommonModule, FormsModule, OverviewComponent, SpinnerComponent, ChartComponent, ChartContainerComponent, TextButtonComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    OverviewComponent,
+    SpinnerComponent,
+    ChartComponent,
+    ChartContainerComponent,
+    TextButtonComponent,
+  ],
   templateUrl: './investment-data-overview.component.html',
-  styleUrl: './investment-data-overview.component.scss'
+  styleUrl: './investment-data-overview.component.scss',
 })
-
 export class InvestmentDataOverviewComponent implements OnInit {
-   investmentSectors = [
+  investmentSectors = [
     { key: 'residential', label: 'Residential' },
     { key: 'land', label: 'Land' },
     { key: 'healthcare', label: 'Healthcare' },
@@ -27,25 +34,47 @@ export class InvestmentDataOverviewComponent implements OnInit {
     { key: 'office', label: 'Office' },
     { key: 'industrial', label: 'Industrial' },
     { key: 'street', label: 'Street' },
-    { key: 'events', label: 'Events' }
+    { key: 'events', label: 'Events' },
   ];
 
   selectedSector: string = 'residential';
-  currentSectorData = this.investmentSectors.find(s => s.key === this.selectedSector);
+  currentSectorData = this.investmentSectors.find(
+    (s) => s.key === this.selectedSector,
+  );
 
   isLoading = true;
-  sectorSummary: Array<{ name: string, value: number }> = [];
-  locationSummary: Array<{ name: string, value: number }> = [];
+  sectorSummary: Array<{ name: string; value: number }> = [];
+  locationSummary: Array<{ name: string; value: number }> = [];
   overviewItems = [
-    { id: 1, totalSum: 0, overviewTitle: 'Total Investments', myMatIcon: 'real_estate_agent' },
-    { id: 2, totalSum: 0, overviewTitle: 'States Covered', myMatIcon: 'public' },
-    { id: 3, totalSum: 0, overviewTitle: 'Active Sectors', myMatIcon: 'apartment' },
-    { id: 4, totalSum: 0, overviewTitle: 'Average Sale Price', myMatIcon: 'attach_money' },
+    {
+      id: 1,
+      totalSum: 0,
+      overviewTitle: 'Total Investments',
+      myMatIcon: 'real_estate_agent',
+    },
+    {
+      id: 2,
+      totalSum: 0,
+      overviewTitle: 'States Covered',
+      myMatIcon: 'public',
+    },
+    {
+      id: 3,
+      totalSum: 0,
+      overviewTitle: 'Active Sectors',
+      myMatIcon: 'apartment',
+    },
+    {
+      id: 4,
+      totalSum: 0,
+      overviewTitle: 'Average Sale Price',
+      myMatIcon: 'attach_money',
+    },
   ];
 
   constructor(
     private readonly dummyService: DummyInvestmentDataService,
-    private readonly router: RouterService
+    private readonly router: RouterService,
   ) {}
 
   ngOnInit(): void {
@@ -54,7 +83,9 @@ export class InvestmentDataOverviewComponent implements OnInit {
 
   onInvestmentSectorChange(sectorKey: string): void {
     this.selectedSector = sectorKey;
-    this.currentSectorData = this.investmentSectors.find(s => s.key === sectorKey);
+    this.currentSectorData = this.investmentSectors.find(
+      (s) => s.key === sectorKey,
+    );
     this.loadOverviewData();
   }
 
@@ -89,10 +120,17 @@ export class InvestmentDataOverviewComponent implements OnInit {
     this.overviewItems[0].totalSum = totalCount;
     this.overviewItems[1].totalSum = states.size;
     this.overviewItems[2].totalSum = sectors.size;
-    this.overviewItems[3].totalSum = totalCount ? Math.floor(totalSale / totalCount) : 0;
+    this.overviewItems[3].totalSum = totalCount
+      ? Math.floor(totalSale / totalCount)
+      : 0;
 
-    this.sectorSummary = Object.entries(sectorCounter).map(([name, value]) => ({ name, value }));
-    this.locationSummary = Object.entries(locationCounter).map(([name, value]) => ({ name, value }));
+    this.sectorSummary = Object.entries(sectorCounter).map(([name, value]) => ({
+      name,
+      value,
+    }));
+    this.locationSummary = Object.entries(locationCounter).map(
+      ([name, value]) => ({ name, value }),
+    );
 
     this.isLoading = false;
   }

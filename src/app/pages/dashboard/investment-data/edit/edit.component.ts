@@ -4,16 +4,22 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { InvestmentDataFormComponent } from '@core/components/dashboard/investment-data-form/investment-data-form.component';
 import { InvestmentDataService } from '@core/services/dashboard/investment-data.service';
 import { routeFadeInOut, visibleTrigger } from '@shared/animations';
-import { map, Observable, catchError, of, Subject, takeUntil } from 'rxjs';
+import {
+  map,
+  Observable,
+  catchError,
+  of,
+  Subject,
+  takeUntil,
+  firstValueFrom,
+} from 'rxjs';
 
 @Component({
   selector: 'app-investment-data-edit',
   standalone: true,
   imports: [InvestmentDataFormComponent, AsyncPipe],
   template: `
-    <app-investment-data-form 
-      action="edit" 
-      [data]="investmentData$ | async">
+    <app-investment-data-form action="edit" [data]="investmentData$ | async">
     </app-investment-data-form>
   `,
   animations: [routeFadeInOut, visibleTrigger],
@@ -23,18 +29,18 @@ import { map, Observable, catchError, of, Subject, takeUntil } from 'rxjs';
   },
 })
 export class EditComponent implements OnInit, OnDestroy {
-  investmentData$!: Observable<any>
+  investmentData$!: Observable<any>;
   sector: string = '';
   private destroy$ = new Subject<void>();
 
   constructor(
     private readonly investmentDataService: InvestmentDataService,
     private readonly route: ActivatedRoute,
-    private readonly router: Router
-  ) { }
+    private readonly router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
+    this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const id = params['investmentDataId'];
       this.sector = params['sector'] || 'residential';
 
@@ -44,20 +50,29 @@ export class EditComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadInvestmentData(id: number): void {
+  private async loadInvestmentData(id: number): Promise<void> {
+    const sectors = await firstValueFrom(
+      this.investmentDataService.getSectors(),
+    );
+
+    const selectedSector = sectors.find(
+      (sector) => sector.label.toLowerCase() === this.sector.toLowerCase(),
+    );
     this.investmentData$ = this.investmentDataService
-      .apiGetInvestmentDataById(id, true, this.sector)
+      .apiGetInvestmentDataById(id, true, selectedSector?.key)
       .pipe(
         map((response) => {
           console.log('Loaded investment data:', response);
-          return response.data
+          return response.data;
         }),
         catchError((error) => {
           console.error('Error loading investment data:', error);
           // Navigate to not found or back to list on error
-          this.router.navigateByUrl(`/dashboard/investment-data/${this.sector}`);
+          this.router.navigateByUrl(
+            `/dashboard/investment-data/${this.sector}`,
+          );
           return of(null);
-        })
+        }),
       );
   }
 
