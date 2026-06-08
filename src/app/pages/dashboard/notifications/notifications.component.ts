@@ -17,13 +17,13 @@ import { NotificationPaneComponent } from '@core/components/dashboard/notificati
     AsyncPipe,
     MyMatIconComponent,
     PaneNavigatorPanelComponent,
-    NotificationPaneComponent
+    NotificationPaneComponent,
   ],
   templateUrl: './notifications.component.html',
   animations: [routeFadeInOut],
   host: {
     '[@routeFadeInOut]': 'true',
-    '[style.display]': 'contents',
+    '[style.display]': "'contents'",
   },
 })
 export class NotificationsComponent {
@@ -48,8 +48,6 @@ export class NotificationsComponent {
       ? this.unreadNotifications
       : this.allNotifications;
   }
-
-
 
   get tabs() {
     return [
@@ -77,8 +75,8 @@ export class NotificationsComponent {
   constructor(
     public utils: UtilsService,
     public ns: NotificationsService,
-    private modalService: ModalService
-  ) { }
+    private modalService: ModalService,
+  ) {}
 
   ngOnInit(): void {
     this.ns.notifications$.subscribe({
@@ -93,11 +91,10 @@ export class NotificationsComponent {
     });
   }
 
-
   deleteAll() {
     this.modalService.open(
       ConfirmModalComponent,
-      this.confirmDeleteAllNotificationsModalPropsData
+      this.confirmDeleteAllNotificationsModalPropsData,
     );
   }
 }

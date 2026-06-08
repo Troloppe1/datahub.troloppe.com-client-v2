@@ -1,0 +1,392 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="form-group mb-0_5rem">
+    <label>Session Type</label>
+    <select
+      class="form-control w-50-max-250"
+      style="width: 50%; max-width: 250px"
+      [(ngModel)]="selectedSessionType"
+      (change)="reload()"
+    >
+      <option value="">— Select session type —</option>
+      <option value="agents">Agents</option>
+      <option value="properties">Properties</option>
+    </select>
+  </div>
+  <p>// {{ sessionTypeHelperText }}</p>
+</div>
+
+<!-- Daily Quota Bar -->
+<div class="quota-bar">
+  <div class="quota-label">Daily Scrapes</div>
+  <div class="quota-dots">
+    <div
+      *ngFor="let dot of quotaDots"
+      class="quota-dot"
+      [class.used]="dot <= usedToday"
+      [class.available]="dot > usedToday"
+    >
+      {{ dot }}
+    </div>
+  </div>
+  <div class="quota-text">
+    <ng-container *ngIf="loadingQuota; else textTpl">
+      <span class="mini-spinner"></span>
+    </ng-container>
+
+    <ng-template #textTpl>
+      <strong>{{ usedToday }}</strong> of {{ maxScrapes }} used today
+    </ng-template>
+  </div>
+  <div class="quota-reset">Resets at midnight</div>
+</div>
+
+<ng-template #quotaSkeleton>
+  <div class="quota-skeleton">
+    <div class="skeleton-label"></div>
+
+    <div class="skeleton-dots">
+      <div *ngFor="let i of [1, 2, 3, 4, 5]" class="skeleton-dot"></div>
+    </div>
+
+    <div class="skeleton-text"></div>
+  </div>
+</ng-template>
+
+<!-- Info Notification -->
+<div class="notif" #infoNotif>
+  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+  <div class="notif-text">
+    A fresh scrape can take up to <strong>60 minutes</strong>. Results will be
+    emailed to your inbox and automatically update the dashboard.
+
+    <br />
+
+    <span *ngIf="isFetchingSessions"> Loading last scrape... </span>
+
+    <span *ngIf="!isFetchingSessions && lastScrape">
+      Last scraped: {{ lastScrape.created_at | date: "d MMM y · hh:mm a" }} by
+      {{ lastScrape.initiator_email }}
+    </span>
+  </div>
+</div>
+
+<!-- Scrape Configuration Card -->
+<div class="scrape-card" [class.scraping]="isScraping">
+  <div class="card-title">Scrape Configuration</div>
+
+  <!-- Inline scraping banner -->
+  <div class="scraping-banner" *ngIf="isScraping">
+    <div class="scraping-banner-left">
+      <div class="scraping-icon-sm">
+        <svg
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+        </svg>
+      </div>
+      <div class="scraping-banner-info">
+        <div class="scraping-banner-title">Scrape in Progress</div>
+        <div class="scraping-banner-sub">
+          <strong>{{ selectedSourceLabel || "Selected source" }}</strong>
+          &middot; {{ selectedState || "All States" }} &middot; Started
+          {{ scrapeStartTime }}
+        </div>
+      </div>
+    </div>
+    <div class="scraping-banner-right">
+      <div class="scraping-progress-inline">
+        <div
+          *ngIf="!isSessionProcessing"
+          class="scraping-bar animation-bar"
+        ></div>
+        <div
+          *ngIf="isSessionProcessing"
+          class="scraping-bar progress-bar"
+          [style.width.%]="scrapeProgressPercentage || 2"
+        ></div>
+      </div>
+      <div class="scraping-status-inline">
+        <div class="pulse-dot"></div>
+        <span>{{ currentStatusMessage }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-grid" [class.form-disabled]="isScraping">
+    <!-- Source Website -->
+    <div class="form-group">
+      <label>Source Website</label>
+      <select
+        class="form-control"
+        [(ngModel)]="selectedSource"
+        (change)="onSourceChange()"
+      >
+        <option value="">— Select source —</option>
+        <option value="npc">Nigerian Property Center</option>
+        <option value="pp">Private Properties</option>
+      </select>
+    </div>
+
+    <!-- State -->
+    <div class="form-group">
+      <label>State</label>
+      <select class="form-control" [(ngModel)]="selectedState">
+        <option *ngFor="let state of nigerianStates" [value]="state">
+          {{ state }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Page Range -->
+    <div class="form-group">
+      <label>Page Range</label>
+
+      <!-- Scrape-all toggle -->
+      <label class="scrape-all-toggle">
+        <input type="checkbox" [(ngModel)]="scrapeAllPages" />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label">Scrape all pages</span>
+      </label>
+
+      <!-- Range inputs — hidden when scrapeAllPages is on -->
+      <div class="page-range-row" *ngIf="!scrapeAllPages">
+        <input
+          type="number"
+          class="form-control"
+          placeholder="From"
+          min="1"
+          [(ngModel)]="pageFrom"
+        />
+        <span>to</span>
+        <input
+          type="number"
+          class="form-control"
+          placeholder="To"
+          min="1"
+          [(ngModel)]="pageTo"
+        />
+        <span class="page-hint" *ngIf="estimatedPages != null">
+          ≈ {{ estimatedPages }} pages
+        </span>
+      </div>
+
+      <div class="scrape-all-hint" *ngIf="scrapeAllPages">
+        All available pages will be scraped
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!isScraping; else stopBtn">
+    <button
+      class="scrape-btn"
+      [disabled]="
+        loadingQuota || remainingScrapes === 0 || isInitializingScrape
+      "
+      [class.exhausted]="!loadingQuota && remainingScrapes === 0"
+      (click)="initializeScrapeSession()"
+    >
+      <svg
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <polyline points="1 4 1 10 7 10" />
+        <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+      </svg>
+
+      <ng-container *ngIf="isInitializingScrape">
+        Starting scrape...
+      </ng-container>
+
+      <ng-container *ngIf="!isInitializingScrape">
+        <ng-container *ngIf="loadingQuota; else quotaLoaded">
+          Checking quota...
+        </ng-container>
+
+        <ng-template #quotaLoaded>
+          <ng-container *ngIf="remainingScrapes > 0; else limitReached">
+            Run Scrape
+            <span class="btn-hint"> ({{ remainingScrapes }} left today) </span>
+          </ng-container>
+
+          <ng-template #limitReached>
+            Daily limit reached — resets at midnight
+          </ng-template>
+        </ng-template>
+      </ng-container>
+    </button>
+  </ng-container>
+
+  <ng-template #stopBtn>
+    <button
+      class="scrape-btn stop"
+      (click)="stopScrape()"
+      [disabled]="isStoppingSession"
+    >
+      <svg
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      </svg>
+
+      <ng-container *ngIf="isStoppingSession">
+        Stopping scrape...
+      </ng-container>
+      <ng-container *ngIf="!isStoppingSession"> Stop Scraping </ng-container>
+    </button>
+  </ng-template>
+</div>
+
+<!-- Scrape History -->
+<div class="history-header">
+  <h2>Scrape History</h2>
+
+  <div class="history-actions">
+    <button class="reload-btn" (click)="reload()" [disabled]="isScraping">
+      <i class="fas fa-sync-alt"></i>
+      Reload
+    </button>
+
+    <span class="badge badge-success">
+      {{ visibleHistory }} of {{ totalHistory }} records
+    </span>
+  </div>
+</div>
+
+<div class="history-table">
+  <!-- LOADING STATE -->
+  <div class="loading-state" *ngIf="isFetchingSessions">
+    <div class="spinner"></div>
+    <div>Loading session history...</div>
+  </div>
+
+  <!-- TABLE -->
+  <table *ngIf="!isFetchingSessions && (scrapeSessionHistory$ | async) as data">
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Source</th>
+        <th>State</th>
+        <th>Pages</th>
+        <th>Agents</th>
+        <th>Scraped By</th>
+        <th>Date &amp; Time</th>
+        <th>Duration (s)</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <!-- EMPTY STATE -->
+      <tr *ngIf="data?.length === 0">
+        <td colspan="9" class="empty-state-cell">
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-title">No session history found</div>
+            <div class="empty-subtitle">
+              Once you run a scrape, results will appear here.
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      <!-- DATA ROWS -->
+      <tr *ngFor="let row of data; let i = index">
+        <td class="mono">{{ (i + 1).toString().padStart(2, "0") }}</td>
+
+        <td>
+          <span class="source-chip" [class.pp]="row.website == 'pp'">
+            {{ row.website === "npc" ? "NPC" : "PP" }}
+          </span>
+        </td>
+
+        <td>{{ row.state }}</td>
+
+        <td class="mono">{{ row.start_page }} – {{ row.end_page }}</td>
+
+        <td class="mono">{{ row.total_records ?? "—" }}</td>
+
+        <td>
+          <div>
+            <strong>{{ row.initiator_name }}</strong>
+          </div>
+          <div class="meta-email">{{ row.initiator_email }}</div>
+        </td>
+
+        <td class="mono">{{ row.created_at }}</td>
+        <td class="mono">{{ row.duration | number }}</td>
+
+        <td>
+          <span
+            class="badge"
+            [ngClass]="{
+              'badge-success': row.status === 'completed',
+              'badge-pending': row.status === 'processing',
+              'badge-danger':
+                row.status === 'stopped' ||
+                row.status === 'failed' ||
+                row.status === 'stopping',
+            }"
+          >
+            {{ row.status }}
+          </span>
+        </td>
+
+        <td>
+          <div class="action-btns">
+            <button
+              *ngIf="row.status === 'stopped' || row.status === 'failed'"
+              class="btn-sm primary"
+              (click)="resumeScrape(row)"
+              [disabled]="
+                tableRowLoadingActions['resume-' + row.session_id] || isScraping
+              "
+            >
+              <span *ngIf="!tableRowLoadingActions['resume-' + row.session_id]">
+                Resume
+              </span>
+
+              <span *ngIf="tableRowLoadingActions['resume-' + row.session_id]">
+                Loading...
+              </span>
+            </button>
+
+            <button
+              *ngIf="row.status === 'completed' && row.upload_url"
+              class="btn-sm"
+              (click)="downloadData(row)"
+              [disabled]="tableRowLoadingActions['download-' + row.session_id]"
+            >
+              <span
+                *ngIf="!tableRowLoadingActions['download-' + row.session_id]"
+              >
+                Download
+              </span>
+
+              <span
+                *ngIf="tableRowLoadingActions['download-' + row.session_id]"
+              >
+                Loading...
+              </span>
+            </button>
+
+            <span *ngIf="row.status === 'processing'" class="no-action">—</span>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,9 +1,23 @@
-@import 'ag-grid-community/styles/ag-grid.css';
-@import 'ag-grid-community/styles/ag-theme-quartz.css';
+@import "ag-grid-community/styles/ag-grid.css";
+@import "ag-grid-community/styles/ag-theme-quartz.css";
 @import "./dashboard";
 
-html, body {
+html,
+body {
   scroll-behavior: smooth;
+  // ── CSS Variables (add these to your global styles.scss or :root) ──
+  --bg: #111720;
+  --surface: #161e2a;
+  --card: #1c2535;
+  --border: #2a3447;
+  --accent: #f5a623;
+  --accent2: #e07b00;
+  --text: #d6dce8;
+  --muted: #6b7a94;
+  --success: #3ecf8e;
+  --danger: #e05252;
+  --info: #5b8dee;
+  --radius: 10px;
 }
 
 .app-backdrop {

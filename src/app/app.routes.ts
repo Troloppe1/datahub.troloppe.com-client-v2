@@ -24,7 +24,6 @@ import { ViewComponent as InvestmentDataViewComponent } from '@pages/dashboard/i
 import { EditComponent as InvestmentDataEditComponent } from '@pages/dashboard/investment-data/edit/edit.component';
 import { NewComponent as ExternalListingsNewComponent } from '@pages/dashboard/external-listings/new/new.component';
 
-
 import { ViewComponent as ExternalListingsViewComponent } from '@pages/dashboard/external-listings/view/view.component';
 import { EditComponent as ExternalListingEditComponent } from '@pages/dashboard/external-listings/edit/edit.component';
 import { IndexComponent as ListingAgentsIndexComponent } from '@pages/dashboard/external-listings/agents/index/index.component';
@@ -33,6 +32,7 @@ import { ShowComponent as ListingAgentShowComponent } from '@pages/dashboard/ext
 import { EditComponent as ListingAgentsEditComponent } from '@pages/dashboard/external-listings/agents/edit/edit.component';
 import { editAgentsGuard } from '@core/guards/edit-agents.guard';
 import { adhocStaffGuard } from '@core/guards/adhoc-staff.guard';
+import { ScraperSessionsComponent } from '@pages/dashboard/scraper-sessions/scraper-sessions.component';
 
 export const routes: Routes = [
   {
@@ -83,7 +83,7 @@ export const routes: Routes = [
     canActivate: [dashboardGuard],
     loadComponent: () =>
       import('./layouts/dashboard-layout/dashboard-layout.component').then(
-        (c) => c.DashboardLayoutComponent
+        (c) => c.DashboardLayoutComponent,
       ),
     children: [
       {
@@ -163,14 +163,14 @@ export const routes: Routes = [
             component: ExternalListingEditComponent,
             title: 'Edit External Listing',
           },
-        ]
+        ],
       },
 
       // Investment Data Routes - Updated
       {
         path: 'investment-data',
         redirectTo: 'investment-data/residential',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'investment-data/:sector',
@@ -191,6 +191,13 @@ export const routes: Routes = [
         path: 'investment-data/:sector/:investmentDataId/edit',
         component: InvestmentDataEditComponent,
         title: 'Edit Investment Data',
+      },
+
+      // Web Scraper Route
+      {
+        path: 'scraper-sessions',
+        component: ScraperSessionsComponent,
+        title: 'Scraper Sessions',
       },
 
       // Notification Route
