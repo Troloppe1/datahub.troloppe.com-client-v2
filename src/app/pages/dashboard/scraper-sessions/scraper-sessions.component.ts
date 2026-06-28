@@ -221,10 +221,12 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
           this.reload();
         },
         error: (error) => {
-          console.error('Failed to initialize scrape session:', error);
+          this.isInitializingScrape = false
+          const errorMessage = error?.error?.message ?? 'Failed to initialize scrape session:'
+          console.error(errorMessage, error);
           this.alertService.error(
             'Error',
-            'Failed to initialize scrape session:',
+            errorMessage,
           );
         },
       });
@@ -248,7 +250,6 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Failed to stop scrape session:', error);
-
         this.alertService.error('Error', 'Failed to stop scrape session.');
       },
     });
