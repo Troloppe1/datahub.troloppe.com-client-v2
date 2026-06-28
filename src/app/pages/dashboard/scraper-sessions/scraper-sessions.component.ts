@@ -154,7 +154,7 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
     this.isStartingNewScrape = false;
     const currentScraperSession =
       this.scraperSessionService.getCurrentScrapeSession();
-    console.log(currentScraperSession);
+
     if (currentScraperSession) {
       this.showScrapeProgress(
         currentScraperSession.sessionId,
@@ -163,7 +163,10 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    this.stopScraper$.next();
+    this.stopScraper$.complete();
+  }
 
   // Initial Status Messages
   getInitStatusMessages() {
@@ -221,13 +224,11 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
           this.reload();
         },
         error: (error) => {
-          this.isInitializingScrape = false
-          const errorMessage = error?.error?.message ?? 'Failed to initialize scrape session:'
+          this.isInitializingScrape = false;
+          const errorMessage =
+            error?.error?.message ?? 'Failed to initialize scrape session:';
           console.error(errorMessage, error);
-          this.alertService.error(
-            'Error',
-            errorMessage,
-          );
+          this.alertService.error('Error', errorMessage);
         },
       });
   }
@@ -243,7 +244,6 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
       next: () => {
         this.isScraping = this.isStoppingSession = false;
         this.stopScraper$.next();
-        this.stopScraper$.complete();
         this.reload();
         this.scraperSessionService.clearCurrentScrapeSession();
         this.alertService.success('Success', 'Stop request sent successfully.');
@@ -308,6 +308,7 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
     let intervalId: any = null;
 
     if (progress.status === 'initialized' || resume) {
+      this.scrapeProgressPercentage = progress.percentage;
       intervalId = setInterval(() => {
         msgIdx++;
         this.currentStatusMessage =
@@ -317,7 +318,9 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
 
     this.scraperSessionService
       .poolScrapeProgress(sessionId)
-      .pipe(takeUntil(this.stopScraper$))
+      .pipe(
+        takeUntil(this.stopScraper$),
+      )
       .subscribe({
         next: ({ status, percentage }) => {
           this.scraperSessionService.setCurrentScrapeSession(sessionId, {
@@ -352,7 +355,6 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
               this.alertService.error('Error', 'Scraping failed');
             }
             this.stopScraper$.next();
-            this.stopScraper$.complete();
             this.isScraping = false;
             this.reload();
           }
@@ -361,14 +363,11 @@ export class ScraperSessionsComponent implements OnInit, OnDestroy {
         error: (err) => {
           clearInterval(intervalId);
           this.stopScraper$.next();
-          this.stopScraper$.complete();
           console.error(err);
         },
 
         complete: () => {
           clearInterval(intervalId);
-          this.stopScraper$.next();
-          this.stopScraper$.complete();
         },
       });
   }
